@@ -15,7 +15,8 @@ import { BrewLogForm } from './components/BrewLogForm';
 import { BeansView } from './components/BeansView';
 import { LogsView } from './components/LogsView';
 import { logsForRecipe } from './lib/dialIn';
-import { type Calibration, findGrinder } from './lib/grinders';
+import { type Calibration, calibrationForBean, findGrinder } from './lib/grinders';
+import { ActiveBeanPicker } from './components/ActiveBeanPicker';
 
 type Sheet =
   | { kind: 'detail'; id: string }
@@ -46,8 +47,17 @@ export default function App() {
   const [beans, setBeans] = usePersistentState<Bean[]>(KEYS.beans, []);
   const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
 
+  const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
+
   /** 설정에 저장된 그라인더 id 를 프로필로 */
   const myGrinderProfile = useMemo(() => findGrinder(myGrinder), [myGrinder]);
+
+  /** 지금 쓰는 원두 (다 마신 원두는 제외) */
+  const activeBean = beans.find((b) => b.id === activeBeanId && !b.finished);
+
+  /** 화면의 모든 환산에 쓰이는 기준 — 지금 원두의 기준점이 설정 보정값 위에 얹힌다 */
+  const effectiveCalibration = useMemo(() => calibrationForBean(calibration, activeBean), [calibration, activeBean]);
+  const fallbackAnchor = myGrinderProfile ? (calibration[myGrinderProfile.id] ?? myGrinderProfile.v60Anchor) : null;
 
   const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const allRecipes = useMemo(() => [...seedRecipes, ...customRecipes], [customRecipes]);
@@ -120,7 +130,7 @@ export default function App() {
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-20 border-b border-stone-800 bg-stone-900/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
             <span className="rounded-lg bg-gradient-to-br from-amber-600 to-orange-800 p-2 text-white">
               <Icon name="coffee" size={20} />
             </span>
@@ -129,10 +139,11 @@ export default function App() {
           <button
             type="button"
             onClick={() => setSheet({ kind: 'settings' })}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-stone-700 bg-stone-800 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:bg-stone-700"
+            aria-label={`설정${myGrinderProfile ? ` (${myGrinderProfile.name})` : ''}`}
+            className="flex max-w-[38%] min-w-0 items-center gap-1.5 rounded-full border border-stone-700 bg-stone-800 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:bg-stone-700"
           >
-            <Icon name="grinder" size={14} />
-            {myGrinderProfile?.name ?? '설정'}
+            <Icon name="grinder" size={14} className="shrink-0" />
+            <span className="truncate">{myGrinderProfile?.name ?? '설정'}</span>
           </button>
         </div>
       </header>
@@ -182,8 +193,14 @@ export default function App() {
           <BeansView
             beans={beans}
             logs={brewLogs}
+            myGrinder={myGrinderProfile}
+            activeBeanId={activeBean?.id ?? null}
+            onActivate={setActiveBeanId}
             onSave={saveBean}
-            onDelete={(id) => setBeans((prev) => prev.filter((b) => b.id !== id))}
+            onDelete={(id) => {
+              setBeans((prev) => prev.filter((b) => b.id !== id));
+              if (activeBeanId === id) setActiveBeanId(null);
+            }}
           />
         </main>
       )}
@@ -216,6 +233,16 @@ export default function App() {
 
         <FilterBar filters={filters} onChange={patch} favoriteCount={favorites.size} />
 
+        <div className="mt-2.5">
+          <ActiveBeanPicker
+            beans={beans}
+            activeBeanId={activeBeanId}
+            onChange={setActiveBeanId}
+            myGrinder={myGrinderProfile}
+            fallbackAnchor={fallbackAnchor}
+          />
+        </div>
+
         <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-stone-800 pb-2">
           <h2 className="text-xl font-bold text-stone-100">레시피</h2>
           <p className="mb-0.5 text-sm text-stone-400">
@@ -231,7 +258,7 @@ export default function App() {
                 recipe={recipe}
                 favorite={favorites.has(recipe.id)}
                 myGrinder={myGrinderProfile}
-                calibration={calibration}
+                calibration={effectiveCalibration}
                 onOpen={() => setSheet({ kind: 'detail', id: recipe.id })}
                 onToggleFavorite={() => toggleFavorite(recipe.id)}
               />
@@ -275,7 +302,16 @@ export default function App() {
           }
           onOpenLog={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
           myGrinder={myGrinderProfile}
-          calibration={calibration}
+          calibration={effectiveCalibration}
+          beanPicker={
+            <ActiveBeanPicker
+              beans={beans}
+              activeBeanId={activeBeanId}
+              onChange={setActiveBeanId}
+              myGrinder={myGrinderProfile}
+              fallbackAnchor={fallbackAnchor}
+            />
+          }
         />
       )}
 
@@ -295,7 +331,8 @@ export default function App() {
           actualSec={sheet.actualSec}
           existing={sheet.logId ? brewLogs.find((l) => l.id === sheet.logId) : undefined}
           myGrinder={myGrinderProfile}
-          calibration={calibration}
+          calibration={effectiveCalibration}
+          defaultBeanId={activeBean?.id}
           onSave={saveLog}
           onClose={() => setSheet({ kind: 'detail', id: sheet.recipeId })}
         />

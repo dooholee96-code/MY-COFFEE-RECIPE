@@ -33,4 +33,5 @@ export const KEYS = {
   brewLogs: 'brewLogs',
   beans: 'beans',
   grinderCalibration: 'grinderCalibration',
+  activeBean: 'activeBean',
 } as const;

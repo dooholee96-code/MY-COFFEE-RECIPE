@@ -141,6 +141,10 @@ export function SettingsSheet({
               그라인더마다 0점이 달라 환산은 추정입니다. {profile.name} 로 V60 을 내렸을 때 가장 잘 나온
               클릭 수를 넣으면 모든 레시피의 환산값이 그만큼 함께 움직입니다.
             </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
+              원두마다 다르게 쓴다면 원두 탭에서 원두별 기준을 넣으세요. 원두를 고르면 그 값이 이 기본값보다
+              우선합니다.
+            </p>
             <div className="mt-3 flex items-center gap-3">
               <button
                 type="button"

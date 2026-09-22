@@ -1,3 +1,5 @@
+import type { Bean } from '../types';
+
 /**
  * 그라인더 사이의 분쇄도 환산.
  *
@@ -47,10 +49,13 @@ export const GRINDERS: GrinderProfile[] = [
     id: 'femobook-a2',
     name: 'Femobook A2',
     micronsPerClick: 18,
-    v60Anchor: 50,
-    pourOverRange: [50, 80],
+    // 공개 리뷰의 V60 권장값은 50(푸어오버 50~80)이지만, 이 앱 사용자가 실제로 V60 에
+    // 쓰는 범위는 원두에 따라 40~50 이다. 소유자의 실측을 우선해 그 중간값을 기준으로 두고,
+    // 권장 범위의 아래쪽도 40 까지 연다 — 그러지 않으면 평소 쓰는 값이 전부 "범위 밖"으로 뜬다.
+    v60Anchor: 45,
+    pourOverRange: [40, 80],
     maxClicks: 120,
-    note: '40클릭 = 1바퀴 · 38mm 헵타고널 코니컬 버',
+    note: '40클릭 = 1바퀴 · 38mm 헵타고널 코니컬 버 · 클릭당 18µm',
   },
   {
     id: 'timemore',
@@ -84,6 +89,24 @@ export function matchGrinderProfile(name: string): GrinderProfile | undefined {
 
 /** 사용자가 직접 보정한 기준점. 그라인더 id → 그 그라인더에서의 V60 클릭 수 */
 export type Calibration = Record<string, number>;
+
+/**
+ * 지금 쓰는 원두의 기준점을 보정값 위에 얹는다.
+ *
+ * 우선순위: 원두별 기준점 > 설정의 보정값 > 그라인더 기본값.
+ * 원두 기준점은 적힌 그라인더에만 적용한다 — 다른 그라인더로 바꾼 뒤에 옛 원두의
+ * 클릭 수가 엉뚱하게 쓰이면 안 되기 때문.
+ */
+export function calibrationForBean(base: Calibration, bean: Bean | undefined): Calibration {
+  if (!bean?.grindAnchor || bean.finished) return base;
+  return { ...base, [bean.grindAnchor.grinderId]: bean.grindAnchor.clicks };
+}
+
+/** 이 원두에 적용되는 내 그라인더 기준 클릭. 원두에 기준이 없거나 다른 그라인더면 null */
+export function beanAnchorFor(bean: Bean | undefined, grinder: GrinderProfile | undefined): number | null {
+  if (!bean?.grindAnchor || !grinder || bean.grindAnchor.grinderId !== grinder.id) return null;
+  return bean.grindAnchor.clicks;
+}
 
 const anchorOf = (g: GrinderProfile, calibration?: Calibration): number =>
   calibration?.[g.id] ?? g.v60Anchor;

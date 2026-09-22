@@ -15,6 +15,8 @@ interface Props {
   existing: BrewLog | undefined;
   myGrinder: GrinderProfile | undefined;
   calibration: Calibration;
+  /** 지금 쓰는 원두 — 새 기록의 원두 기본값 */
+  defaultBeanId: string | undefined;
   onSave: (log: BrewLog) => void;
   onClose: () => void;
 }
@@ -51,8 +53,18 @@ function defaultGrindNote(recipe: Recipe, myGrinder: GrinderProfile | undefined,
  * 맛을 고르면 다음에 바꿀 것 한 가지를 바로 보여준다 — 기록을 남기는 순간에
  * 다음 행동이 정해지지 않으면 기록은 쌓이기만 하고 쓰이지 않는다.
  */
-export function BrewLogForm({ recipe, beans, actualSec, existing, myGrinder, calibration, onSave, onClose }: Props) {
-  const [beanId, setBeanId] = useState(existing?.beanId ?? '');
+export function BrewLogForm({
+  recipe,
+  beans,
+  actualSec,
+  existing,
+  myGrinder,
+  calibration,
+  defaultBeanId,
+  onSave,
+  onClose,
+}: Props) {
+  const [beanId, setBeanId] = useState(existing ? (existing.beanId ?? '') : (defaultBeanId ?? ''));
   const [beanG, setBeanG] = useState(String(existing?.beanG ?? recipe.beanG));
   const [waterG, setWaterG] = useState(String(existing?.waterG ?? recipe.waterG));
   const [tempC, setTempC] = useState(String(existing?.tempC ?? recipe.tempC));

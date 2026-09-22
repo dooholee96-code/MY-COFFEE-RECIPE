@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { BrewLog, Recipe } from '../types';
 import { cumulativeWater, formatRatio, formatSec, scaleRecipe, servedVolumeG } from '../lib/brew';
 import { Icon } from './Icon';
@@ -28,6 +28,8 @@ interface Props {
   onOpenLog: (log: BrewLog) => void;
   myGrinder: GrinderProfile | undefined;
   calibration: Calibration;
+  /** 지금 쓰는 원두 선택 — 바꾸면 분쇄도 환산이 바로 바뀐다 */
+  beanPicker: ReactNode;
 }
 
 export function RecipeDetail({
@@ -45,6 +47,7 @@ export function RecipeDetail({
   onOpenLog,
   myGrinder,
   calibration,
+  beanPicker,
 }: Props) {
   const [dose, setDose] = useState(recipe.beanG);
   const shown = scaleRecipe(recipe, dose);
@@ -98,6 +101,8 @@ export function RecipeDetail({
         <BrewTimer recipe={shown} soundOn={soundOn} onLogBrew={(sec) => onLogBrew(sec, shown.beanG)} />
 
         <DoseScaler baseBeanG={recipe.beanG} value={dose} onChange={setDose} />
+
+        {beanPicker}
 
         {/* 설정값 */}
         <dl className="grid grid-cols-2 gap-2">

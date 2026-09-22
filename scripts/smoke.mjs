@@ -155,18 +155,18 @@ await step('Femobook A2 를 고르면 분쇄도가 환산된다', async () => {
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
   const body = await page.textContent('main');
-  // 코만단테 22~24 → Femobook 50~53.5
-  if (!body.includes('Femobook A2 50~53.5')) throw new Error(`환산값이 안 보인다: ${body.slice(0, 400)}`);
+  // 코만단테 22~24 → Femobook 45~48.5 (기준 45)
+  if (!body.includes('Femobook A2 45~48.5')) throw new Error(`환산값이 안 보인다: ${body.slice(0, 400)}`);
   if (!body.includes('코만단테 22~24')) throw new Error('원본 값이 사라졌다');
 });
 
 await step('보정하면 환산값이 함께 움직인다', async () => {
   await page.getByRole('button', { name: /Femobook A2/ }).click();
-  await page.getByRole('button', { name: '기준 1클릭 늘리기' }).click(); // 50 → 51
+  await page.getByRole('button', { name: '기준 1클릭 늘리기' }).click(); // 45 → 46
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
   const body = await page.textContent('main');
-  if (!body.includes('Femobook A2 51~54.5')) throw new Error(`보정이 반영 안 됨: ${body.slice(0, 300)}`);
+  if (!body.includes('Femobook A2 46~49.5')) throw new Error(`보정이 반영 안 됨: ${body.slice(0, 300)}`);
 });
 
 await step('기록 폼의 분쇄도가 내 그라인더 값으로 채워진다', async () => {
@@ -188,9 +188,23 @@ await step('원두를 등록하면 로스팅 일수가 계산된다', async () =
   await d.locator('#bf-name').fill('예가체프');
   const d5 = new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10);
   await d.locator('#bf-date').fill(d5);
+  await d.locator('#bf-anchor').fill('41');
   await d.getByRole('button', { name: '저장' }).click();
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
   await page.waitForSelector('text=로스팅 5일차');
+  // 처음 등록한 원두는 바로 "지금 쓰는 원두" 가 된다
+  await page.getByRole('button', { name: '지금 쓰는 원두' }).waitFor();
+});
+
+await step('원두를 고르면 그 원두의 기준으로 분쇄도가 바뀐다', async () => {
+  await page.getByRole('button', { name: /^레시피$/ }).click();
+  let body = await page.textContent('main');
+  // 설정 보정값(46) 대신 원두 기준(41)이 쓰인다
+  if (!body.includes('Femobook A2 41~44.5')) throw new Error(`원두 기준 미반영: ${body.slice(0, 400)}`);
+  // 원두 선택을 풀면 설정 보정값으로 돌아간다
+  await page.locator('main select').first().selectOption('');
+  body = await page.textContent('main');
+  if (!body.includes('Femobook A2 46~49.5')) throw new Error(`원두 해제 후 복귀 안 됨: ${body.slice(0, 300)}`);
 });
 
 await step('콘솔 에러가 없다', async () => {

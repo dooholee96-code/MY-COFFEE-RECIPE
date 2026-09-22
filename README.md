@@ -1,0 +1,92 @@
+# MY COFFEE RECIPE
+
+직접 모은 커피 레시피 아카이브와 **브루잉 타이머**. 폰을 한 손에 들고 추출하면서 쓰는 걸 전제로 만들었습니다.
+
+## 실행
+
+```bash
+npm install
+npm run dev          # 개발 서버
+npm run build        # dist/ 로 빌드
+npm run build:single # dist-single/index.html — 외부 의존성 없는 단일 HTML 파일 하나
+```
+
+`build:single` 로 나온 `dist-single/index.html` 은 파일 하나로 완결됩니다. 폰에 복사해서
+바로 열거나, 아무 정적 호스팅에나 올리면 됩니다. 네트워크 없이도 동작합니다.
+
+## 검증
+
+```bash
+npm test        # 단위 테스트 (계산·필터·데이터 정합성)
+npm run smoke   # 실제 크로미움에서 도는지 확인 (빌드 후 Playwright)
+npm run lint
+npm run typecheck
+```
+
+## 구조
+
+```
+src/
+  types.ts              레시피 도메인 모델
+  data/recipes.ts       기본 레시피 17개
+  lib/brew.ts           누적 투입량·비율·원두량 환산 등 순수 계산
+  lib/filter.ts         필터링과 검색
+  lib/storage.ts        localStorage 래퍼
+  hooks/useBrewTimer.ts 시각 기준 타이머, 화면 꺼짐 방지
+  components/           UI
+scripts/smoke.mjs       브라우저 스모크 테스트
+```
+
+계산과 필터링은 UI에서 떼어내 `lib/` 에 두고 테스트로 묶어 뒀습니다. 레시피 수치는
+`data/recipes.test.ts` 가 검사합니다 — 단계별 물 양의 합이 총량과 맞는지, 시각이 시간순인지,
+비율이 현실적인 범위인지 등.
+
+## 레시피 추가하기
+
+두 가지 방법이 있습니다.
+
+**앱 안에서** — 우하단 `레시피 추가` 버튼. 브라우저에 저장되고, 설정에서 JSON 으로
+내보낼 수 있습니다. 모카포트·에스프레소·캡슐 탭은 아직 비어 있는데, 여기에 쌓으면 됩니다.
+
+**저장소에 심어서** — `src/data/recipes.ts` 에 항목을 추가하면 모든 기기에서 기본으로 보입니다.
+앱에서 내보낸 JSON 을 그대로 옮겨 붙여도 됩니다. 추가한 뒤 `npm test` 로 수치를 확인하세요.
+
+```ts
+{
+  id: 'bialetti-basic',
+  title: '비알레티 기본',
+  category: 'mokapot',
+  serve: 'hot',
+  roast: 'dark',
+  beanG: 16,
+  waterG: 120,     // steps 의 waterG 합과 같아야 한다
+  tempC: 95,
+  grind: '곱게',
+  gear: '비알레티 모카 익스프레스 3컵',
+  totalSec: 240,
+  steps: [
+    { atSec: 0, waterG: 120, label: '보일러에 뜨거운 물 채우기' },
+    { atSec: 60, waterG: 0, label: '중불로 가열' },
+  ],
+}
+```
+
+`atSec` 을 `null` 로 두면 시계에 매이지 않는 단계가 되고, 그런 단계가 하나라도 있으면
+타이머는 자동 진행 대신 수동 진행 모드로 바뀝니다. `waterG` 가 `null` 이면 "눈대중"으로 표시됩니다.
+
+## v1 에서 달라진 것
+
+이전 버전은 단일 HTML 파일에 브라우저 Babel 로 JSX 를 컴파일해 쓰던 앱이었습니다.
+옮기면서 바꾼 것들:
+
+- **수치를 문자열에서 숫자로.** `"18g"`, `"92℃"`, `"2:40"` 이라 산술이 불가능했습니다.
+  숫자가 되면서 비율 표시, 원두량 환산, 누적 투입량 계산이 가능해졌습니다.
+- **타이머.** 모든 레시피가 `timeline` 을 갖고 있었지만 표로만 보여줬습니다. 이제 재생됩니다.
+- **중복 필드 정리.** `waterAmount` 와 `totalWater` 가 같은 사실을 두 번 적고 있었고
+  용챔 약배전 Hot 에서 서로 어긋났습니다(240g vs 230~240g). 실제 단계 합인 230g 으로 통일했습니다.
+- **`estTime` 부활.** 정의만 있고 화면에 안 쓰이던 필드였습니다.
+- **누적/증분 표기 통일.** 레시피마다 "1차 60g" 과 "1차 115g까지" 가 섞여 있었습니다.
+- **접근성.** 카드가 `div onClick` 이라 키보드로 열 수 없었고, 모달은 Esc 로 닫히지 않고
+  포커스가 갇히지도 풀리지도 않았습니다.
+- **런타임 Babel 제거.** CDN 에서 2MB 넘는 컴파일러를 매번 받아 브라우저에서 JSX 를
+  컴파일했습니다. 지금은 빌드 시점에 끝내고 단일 파일 기준 240KB 입니다.

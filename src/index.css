@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/*
+ * v1 은 Pretendard 를 CDN 에서 받아왔다. 네트워크가 없는 주방에서도 열려야 하므로
+ * 시스템 한글 폰트를 우선 쓰고, Pretendard 가 기기에 설치돼 있으면 그것을 쓴다.
+ */
+@theme {
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    /* iOS 사파리에서 입력창 포커스 시 확대되는 것을 막는다 */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-stone-900 text-stone-100 antialiased;
+    /* 노치/홈 인디케이터를 피한다 */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* 숫자 입력창의 스피너는 좁은 화면에서 방해가 된다 */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-sheet {
+  animation: sheet-in 0.22s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

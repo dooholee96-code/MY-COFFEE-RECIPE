@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import type { Recipe } from '../types';
+import type { BrewLog, Recipe } from '../types';
 import { cumulativeWater, formatRatio, formatSec, scaleRecipe, servedVolumeG } from '../lib/brew';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { BrewTimer } from './BrewTimer';
 import { DoseScaler } from './DoseScaler';
 import { roastLabel } from '../lib/labels';
+import { StarRating } from './StarRating';
+import { GrindSetting } from './GrindSetting';
+import type { Calibration, GrinderProfile } from '../lib/grinders';
+import { TASTE_OPTIONS, averageRating, bestLog } from '../lib/dialIn';
 
 interface Props {
   recipe: Recipe;
@@ -18,6 +22,12 @@ interface Props {
   soundOn: boolean;
   onEdit: (() => void) | undefined;
   onDelete: (() => void) | undefined;
+  /** 이 레시피로 내린 지난 기록 (최신순) */
+  logs: BrewLog[];
+  onLogBrew: (actualSec: number, beanG: number) => void;
+  onOpenLog: (log: BrewLog) => void;
+  myGrinder: GrinderProfile | undefined;
+  calibration: Calibration;
 }
 
 export function RecipeDetail({
@@ -30,6 +40,11 @@ export function RecipeDetail({
   soundOn,
   onEdit,
   onDelete,
+  logs,
+  onLogBrew,
+  onOpenLog,
+  myGrinder,
+  calibration,
 }: Props) {
   const [dose, setDose] = useState(recipe.beanG);
   const shown = scaleRecipe(recipe, dose);
@@ -80,7 +95,7 @@ export function RecipeDetail({
 
       {/* 본문 */}
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-        <BrewTimer recipe={shown} soundOn={soundOn} />
+        <BrewTimer recipe={shown} soundOn={soundOn} onLogBrew={(sec) => onLogBrew(sec, shown.beanG)} />
 
         <DoseScaler baseBeanG={recipe.beanG} value={dose} onChange={setDose} />
 
@@ -89,13 +104,6 @@ export function RecipeDetail({
           {[
             { icon: 'thermometer' as const, label: '물 온도', value: `${recipe.tempC}℃` },
             { icon: 'clock' as const, label: '목표 시간', value: formatSec(recipe.totalSec) },
-            {
-              icon: 'grinder' as const,
-              label: '분쇄도',
-              value: recipe.grinderSettings?.length
-                ? recipe.grinderSettings.map((s) => `${s.grinder} ${s.setting}`).join('\n')
-                : recipe.grind,
-            },
             { icon: 'filter' as const, label: '추천 기구', value: recipe.gear },
           ].map((cell) => (
             <div
@@ -107,6 +115,23 @@ export function RecipeDetail({
               <dd className="text-[13px] leading-tight font-bold whitespace-pre-line text-stone-200">{cell.value}</dd>
             </div>
           ))}
+          <div className="col-span-2 flex flex-col items-center gap-1 rounded-xl border border-stone-700 bg-stone-900/60 p-3 text-center">
+            <Icon name="grinder" size={16} className="text-stone-500" />
+            <dt className="text-[11px] text-stone-500">분쇄도</dt>
+            <dd className="text-[13px] leading-tight font-bold text-stone-200">
+              <GrindSetting
+                settings={recipe.grinderSettings ?? []}
+                myGrinder={myGrinder}
+                calibration={calibration}
+                fallback={recipe.grind}
+              />
+            </dd>
+            {myGrinder && myGrinder.id !== 'comandante' && (
+              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
+                환산값은 출발점입니다. 맛을 보고 보정하세요 — 설정에서 기준을 바꿀 수 있습니다.
+              </p>
+            )}
+          </div>
         </dl>
 
         {recipe.note && (
@@ -194,6 +219,9 @@ export function RecipeDetail({
           {shown.finishing?.note && <p className="pt-1 text-sm text-stone-400">{shown.finishing.note}</p>}
         </section>
 
+        {/* 내 기록 — 레시피를 다시 열었을 때 지난번에 어땠는지 바로 보이게 */}
+        {logs.length > 0 && <PastBrews logs={logs} onOpenLog={onOpenLog} />}
+
         {/* 액션 */}
         <div className="space-y-2">
           {sibling && (
@@ -251,5 +279,70 @@ export function RecipeDetail({
         </div>
       </div>
     </Modal>
+  );
+}
+
+/** 이 레시피로 내린 지난 기록 요약 */
+function PastBrews({ logs, onOpenLog }: { logs: BrewLog[]; onOpenLog: (log: BrewLog) => void }) {
+  const avg = averageRating(logs);
+  const best = bestLog(logs);
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="flex items-center gap-2 text-xs font-bold tracking-wider text-stone-400 uppercase">
+          <Icon name="clock" size={14} className="text-amber-500" />
+          내 기록 {logs.length}회
+        </h4>
+        {avg !== null && (
+          <span className="flex items-center gap-1.5 text-xs text-stone-500">
+            평균
+            <StarRating value={Math.round(avg)} size={12} />
+            {avg.toFixed(1)}
+          </span>
+        )}
+      </div>
+
+      {best && (
+        <p className="mb-2 rounded-xl border border-emerald-900/50 bg-emerald-950/25 px-3 py-2 text-xs text-emerald-200/90">
+          <span className="font-bold text-emerald-400">가장 잘 나온 설정</span>{' '}
+          <span className="font-mono">
+            {best.beanG}g · {best.waterG}g · {best.tempC}℃
+            {best.grindNote ? ` · ${best.grindNote}` : ''}
+            {best.actualSec !== undefined ? ` · ${formatSec(best.actualSec)}` : ''}
+          </span>
+        </p>
+      )}
+
+      <ul className="space-y-1.5">
+        {logs.slice(0, 5).map((log) => (
+          <li key={log.id}>
+            <button
+              type="button"
+              onClick={() => onOpenLog(log)}
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-stone-700 bg-stone-900/40 px-3 py-2 text-left transition hover:border-stone-600"
+            >
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-stone-300">
+                  {new Date(log.brewedAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                </span>
+                <span className="block truncate font-mono text-[11px] text-stone-500">
+                  {log.beanG}g · {log.waterG}g
+                  {log.actualSec !== undefined ? ` · ${formatSec(log.actualSec)}` : ''}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {log.taste && (
+                  <span className="text-[10px] font-bold text-stone-500">
+                    {TASTE_OPTIONS.find((t) => t.id === log.taste)?.label}
+                  </span>
+                )}
+                {log.rating !== undefined && <StarRating value={log.rating} size={12} />}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

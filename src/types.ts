@@ -99,3 +99,50 @@ export interface Filters {
   /** 즐겨찾기만 보기 */
   favoritesOnly: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 기록 (brew log) — 레시피를 "보는" 앱에서 "내가 뭘 내렸는지 쌓는" 앱으로
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 마신 뒤의 판정. 조정 제안의 입력이 된다. */
+export type TasteVerdict = 'sour' | 'bitter' | 'weak' | 'strong' | 'balanced';
+
+/** 내가 가진 원두 */
+export interface Bean {
+  id: string;
+  name: string;
+  roaster?: string;
+  origin?: string;
+  /** 가공 방식 (워시드/내추럴/허니 등) */
+  process?: string;
+  roastLevel?: RoastLevel;
+  /** 로스팅 날짜 (YYYY-MM-DD). 디게싱 일수를 세는 데 쓴다 — 같은 레시피라도
+   *  로스팅 3일차와 20일차는 다르게 나오므로 기록에 남길 가치가 있다. */
+  roastedOn?: string;
+  notes?: string;
+  /** 다 마신 원두. 목록에서 내리되 과거 기록은 유지한다. */
+  finished?: boolean;
+}
+
+/** 실제로 한 번 내린 기록 */
+export interface BrewLog {
+  id: string;
+  recipeId: string;
+  /** 레시피가 지워지거나 바뀌어도 기록이 남도록 이름을 같이 박아 둔다 */
+  recipeTitle: string;
+  beanId?: string;
+  /** ISO 8601 */
+  brewedAt: string;
+  /** 실제로 쓴 값 — 원두량을 조정했다면 조정된 값이 들어온다 */
+  beanG: number;
+  waterG: number;
+  tempC: number;
+  /** 실제로 쓴 분쇄도 (예: '코만단테 24클릭') */
+  grindNote?: string;
+  /** 실제로 걸린 시간 (초). 타이머로 내렸다면 자동으로 채워진다 */
+  actualSec?: number;
+  /** 1~5 */
+  rating?: number;
+  taste?: TasteVerdict;
+  note?: string;
+}

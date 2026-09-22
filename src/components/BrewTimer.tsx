@@ -8,6 +8,8 @@ import { Icon } from './Icon';
 interface Props {
   recipe: Recipe;
   soundOn: boolean;
+  /** 추출이 끝났을 때 기록 화면으로 넘어간다. 경과 시간을 같이 넘긴다. */
+  onLogBrew: (actualSec: number) => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * 수위를 보며 붓는 레시피(안스타 초대용량)는 시계로 진행할 수 없으므로
  * "다음 단계" 버튼으로 직접 넘기는 수동 모드가 된다.
  */
-export function BrewTimer({ recipe, soundOn }: Props) {
+export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
   const auto = isAutoPlayable(recipe);
   const { status, elapsed, start, pause, reset } = useBrewTimer(recipe.totalSec);
   const [manualStep, setManualStep] = useState(0);
@@ -102,7 +104,16 @@ export function BrewTimer({ recipe, soundOn }: Props) {
         {status === 'idle' && current < 0 ? (
           <p className="text-sm text-stone-400">시작을 누르면 단계별로 안내합니다.</p>
         ) : status === 'done' ? (
-          <p className="font-bold text-emerald-400">추출 완료 · {recipe.finishing?.note ?? '마무리하세요'}</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 font-bold text-emerald-400">추출 완료 · {recipe.finishing?.note ?? '마무리하세요'}</p>
+            <button
+              type="button"
+              onClick={() => onLogBrew(elapsed)}
+              className="shrink-0 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white transition hover:bg-emerald-600"
+            >
+              기록하기
+            </button>
+          </div>
         ) : step ? (
           <>
             <p className="text-lg font-bold text-stone-100">
@@ -166,6 +177,16 @@ export function BrewTimer({ recipe, soundOn }: Props) {
           </>
         )}
       </div>
+
+      {status !== 'done' && (
+        <button
+          type="button"
+          onClick={() => onLogBrew(elapsed)}
+          className="mt-2 w-full rounded-lg border border-stone-700 py-2 text-xs font-bold text-stone-400 transition hover:border-stone-600 hover:text-stone-200"
+        >
+          타이머 없이 기록하기
+        </button>
+      )}
 
       {!auto && (
         <p className="mt-2 flex items-start gap-1.5 text-xs text-stone-500">

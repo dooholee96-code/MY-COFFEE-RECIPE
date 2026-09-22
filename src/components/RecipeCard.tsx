@@ -2,20 +2,20 @@ import type { Recipe } from '../types';
 import { formatRatio, formatSec } from '../lib/brew';
 import { Icon } from './Icon';
 import { roastBadgeClass, roastLabel } from '../lib/labels';
+import { GrindSetting } from './GrindSetting';
+import type { Calibration, GrinderProfile } from '../lib/grinders';
 
 interface Props {
   recipe: Recipe;
   favorite: boolean;
   onOpen: () => void;
   onToggleFavorite: () => void;
-  /** 사용자가 고른 그라인더. 그 그라인더의 세팅을 앞으로 끌어올린다. */
-  myGrinder: string | null;
+  /** 내가 쓰는 그라인더. 레시피 값을 이 그라인더 기준으로 환산해 보여준다. */
+  myGrinder: GrinderProfile | undefined;
+  calibration: Calibration;
 }
 
-export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrinder }: Props) {
-  const settings = recipe.grinderSettings ?? [];
-  const mine = myGrinder ? settings.find((s) => s.grinder === myGrinder) : undefined;
-  const shown = mine ? [mine] : settings;
+export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrinder, calibration }: Props) {
 
   return (
     // 카드 전체가 버튼이면 안쪽의 즐겨찾기 버튼을 넣을 수 없으므로,
@@ -94,10 +94,13 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
         <p className="flex items-center gap-2">
           <Icon name="grinder" size={13} className="shrink-0 text-amber-500/80" />
           <span className="truncate">
-            {shown.length
-              ? shown.map((s) => `${s.grinder} ${s.setting}`).join(' / ')
-              : recipe.grind}
-            {mine && settings.length > 1 && <span className="ml-1 text-stone-600">(내 그라인더)</span>}
+            <GrindSetting
+              settings={recipe.grinderSettings ?? []}
+              myGrinder={myGrinder}
+              calibration={calibration}
+              fallback={recipe.grind}
+              compact
+            />
           </span>
         </p>
         <p className="flex items-center gap-2">

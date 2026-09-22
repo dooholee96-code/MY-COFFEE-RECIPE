@@ -30,4 +30,7 @@ export const KEYS = {
   customRecipes: 'customRecipes',
   myGrinder: 'myGrinder',
   soundOn: 'soundOn',
+  brewLogs: 'brewLogs',
+  beans: 'beans',
+  grinderCalibration: 'grinderCalibration',
 } as const;

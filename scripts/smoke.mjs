@@ -119,12 +119,86 @@ await step('레시피를 추가하면 빈 카테고리가 채워진다', async (
   await page.waitForFunction(() => document.querySelectorAll('article').length === 1);
 });
 
+await step('추출을 기록하면 조정 제안이 나온다', async () => {
+  await page.getByRole('button', { name: /브루잉/ }).click();
+  await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  await d.getByRole('button', { name: '타이머 없이 기록하기' }).click();
+  await page.waitForFunction(() =>
+    document.querySelector('[role=dialog] h2')?.textContent?.includes('추출 기록'));
+  await page.getByRole('button', { name: '시다', exact: true }).click();
+  await page.waitForSelector('text=분쇄도를 한 클릭 가늘게');
+  // 타이머를 돌리지 않았으므로 시간 칸은 비어 있어야 한다 (0 이 아니라)
+  const sec = await d.locator('#bl-sec').inputValue();
+  if (sec !== '') throw new Error(`시간 칸에 ${sec} 가 들어 있다`);
+  await page.getByRole('radio', { name: '4점' }).click();
+  await page.getByRole('button', { name: '저장' }).click();
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+});
+
+await step('기록 화면에 남고 레시피에도 되비친다', async () => {
+  await page.getByRole('button', { name: /^기록/ }).click();
+  await page.waitForSelector('article');
+  const body = await page.textContent('main');
+  if (!body.includes('4666 V2')) throw new Error('기록 목록에 없다');
+  await page.getByRole('button', { name: /^레시피$/ }).click();
+  await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
+  await page.waitForSelector('text=내 기록 1회');
+  await page.waitForSelector('text=가장 잘 나온 설정');
+  await page.keyboard.press('Escape');
+});
+
+await step('Femobook A2 를 고르면 분쇄도가 환산된다', async () => {
+  await page.getByRole('button', { name: /설정/ }).click();
+  await page.getByRole('button', { name: 'Femobook A2' }).click();
+  await page.waitForSelector('text=환산 기준 보정');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  const body = await page.textContent('main');
+  // 코만단테 22~24 → Femobook 50~53.5
+  if (!body.includes('Femobook A2 50~53.5')) throw new Error(`환산값이 안 보인다: ${body.slice(0, 400)}`);
+  if (!body.includes('코만단테 22~24')) throw new Error('원본 값이 사라졌다');
+});
+
+await step('보정하면 환산값이 함께 움직인다', async () => {
+  await page.getByRole('button', { name: /Femobook A2/ }).click();
+  await page.getByRole('button', { name: '기준 1클릭 늘리기' }).click(); // 50 → 51
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  const body = await page.textContent('main');
+  if (!body.includes('Femobook A2 51~54.5')) throw new Error(`보정이 반영 안 됨: ${body.slice(0, 300)}`);
+});
+
+await step('기록 폼의 분쇄도가 내 그라인더 값으로 채워진다', async () => {
+  await page.getByRole('button', { name: /^레시피$/ }).click();
+  await page.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  await d.getByRole('button', { name: '타이머 없이 기록하기' }).click();
+  const grind = await d.locator('#bl-grind').inputValue();
+  if (!grind.startsWith('Femobook A2')) throw new Error(`분쇄도 기본값이 ${grind}`);
+  console.log(`      기본값: ${grind}`);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+});
+
+await step('원두를 등록하면 로스팅 일수가 계산된다', async () => {
+  await page.getByRole('button', { name: /^원두/ }).click();
+  await page.getByRole('button', { name: '원두 등록' }).first().click();
+  const d = page.locator('[role=dialog]');
+  await d.locator('#bf-name').fill('예가체프');
+  const d5 = new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10);
+  await d.locator('#bf-date').fill(d5);
+  await d.getByRole('button', { name: '저장' }).click();
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  await page.waitForSelector('text=로스팅 5일차');
+});
+
 await step('콘솔 에러가 없다', async () => {
   if (errors.length) throw new Error(errors.join(' | '));
 });
 
+await page.getByRole('button', { name: /^레시피$/ }).click();
 await page.screenshot({ path: `${process.env.SHOT_DIR ?? process.cwd()}/shot-list.png`, fullPage: false });
-await page.getByRole('button', { name: /브루잉/ }).click();
 await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
 await page.waitForSelector('[role=dialog]');
 await page.screenshot({ path: `${process.env.SHOT_DIR ?? process.cwd()}/shot-detail.png` });

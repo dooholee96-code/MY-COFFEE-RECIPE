@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { Category, Filters, Recipe } from './types';
+import type { Bean, BrewLog, Category, Filters, Recipe } from './types';
 import { seedRecipes } from './data/recipes';
 import { defaultFilters, filterRecipes, hasActiveFilters } from './lib/filter';
 import { KEYS } from './lib/storage';
@@ -11,10 +11,30 @@ import { RecipeCard } from './components/RecipeCard';
 import { RecipeDetail } from './components/RecipeDetail';
 import { RecipeForm } from './components/RecipeForm';
 import { SettingsSheet } from './components/SettingsSheet';
+import { BrewLogForm } from './components/BrewLogForm';
+import { BeansView } from './components/BeansView';
+import { LogsView } from './components/LogsView';
+import { logsForRecipe } from './lib/dialIn';
+import { type Calibration, findGrinder } from './lib/grinders';
 
-type Sheet = { kind: 'detail'; id: string } | { kind: 'form'; id: string | null } | { kind: 'settings' } | null;
+type Sheet =
+  | { kind: 'detail'; id: string }
+  | { kind: 'form'; id: string | null }
+  | { kind: 'settings' }
+  | { kind: 'log'; recipeId: string; logId: string | null; actualSec?: number; beanG?: number }
+  | null;
+
+/** 최상위 화면 */
+type View = 'recipes' | 'logs' | 'beans';
+
+const VIEWS: { id: View; label: string }[] = [
+  { id: 'recipes', label: '레시피' },
+  { id: 'logs', label: '기록' },
+  { id: 'beans', label: '원두' },
+];
 
 export default function App() {
+  const [view, setView] = useState<View>('recipes');
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [sheet, setSheet] = useState<Sheet>(null);
 
@@ -22,17 +42,16 @@ export default function App() {
   const [customRecipes, setCustomRecipes] = usePersistentState<Recipe[]>(KEYS.customRecipes, []);
   const [myGrinder, setMyGrinder] = usePersistentState<string | null>(KEYS.myGrinder, null);
   const [soundOn, setSoundOn] = usePersistentState<boolean>(KEYS.soundOn, true);
+  const [brewLogs, setBrewLogs] = usePersistentState<BrewLog[]>(KEYS.brewLogs, []);
+  const [beans, setBeans] = usePersistentState<Bean[]>(KEYS.beans, []);
+  const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
+
+  /** 설정에 저장된 그라인더 id 를 프로필로 */
+  const myGrinderProfile = useMemo(() => findGrinder(myGrinder), [myGrinder]);
 
   const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const allRecipes = useMemo(() => [...seedRecipes, ...customRecipes], [customRecipes]);
   const visible = useMemo(() => filterRecipes(allRecipes, filters, favorites), [allRecipes, filters, favorites]);
-
-  /** 데이터에 실제로 등장하는 그라인더 이름 */
-  const grinders = useMemo(() => {
-    const names = new Set<string>();
-    allRecipes.forEach((r) => r.grinderSettings?.forEach((s) => names.add(s.grinder)));
-    return [...names].sort();
-  }, [allRecipes]);
 
   const patch = useCallback((p: Partial<Filters>) => setFilters((prev) => ({ ...prev, ...p })), []);
 
@@ -61,15 +80,36 @@ export default function App() {
     setSheet(null);
   };
 
-  const importRecipes = (incoming: Recipe[]) => {
-    setCustomRecipes((prev) => {
-      const merged = new Map(prev.map((r) => [r.id, r]));
-      incoming.forEach((r) => merged.set(r.id, r));
-      return [...merged.values()];
+  const saveLog = (log: BrewLog) => {
+    setBrewLogs((prev) => {
+      const at = prev.findIndex((l) => l.id === log.id);
+      return at === -1 ? [...prev, log] : prev.map((l) => (l.id === log.id ? log : l));
     });
+    setSheet(null);
+  };
+
+  const saveBean = (bean: Bean) =>
+    setBeans((prev) => {
+      const at = prev.findIndex((b) => b.id === bean.id);
+      return at === -1 ? [...prev, bean] : prev.map((b) => (b.id === bean.id ? bean : b));
+    });
+
+  /** 백업 불러오기 — 같은 id 는 덮어쓰고 나머지는 합친다 */
+  const importBackup = (data: { recipes?: Recipe[]; logs?: BrewLog[]; beans?: Bean[] }) => {
+    const merge = <T extends { id: string }>(prev: T[], incoming: T[] | undefined): T[] => {
+      if (!incoming?.length) return prev;
+      const byId = new Map(prev.map((x) => [x.id, x]));
+      incoming.forEach((x) => byId.set(x.id, x));
+      return [...byId.values()];
+    };
+    if (data.recipes?.length)
+      setCustomRecipes((prev) => merge(prev, data.recipes!.map((r) => ({ ...r, custom: true }))));
+    if (data.logs?.length) setBrewLogs((prev) => merge(prev, data.logs));
+    if (data.beans?.length) setBeans((prev) => merge(prev, data.beans));
   };
 
   const detailRecipe = sheet?.kind === 'detail' ? allRecipes.find((r) => r.id === sheet.id) : undefined;
+  const logSheetRecipe = sheet?.kind === 'log' ? allRecipes.find((r) => r.id === sheet.recipeId) : undefined;
   const editingRecipe = sheet?.kind === 'form' && sheet.id ? allRecipes.find((r) => r.id === sheet.id) : undefined;
   const sibling =
     detailRecipe?.family !== undefined
@@ -92,12 +132,63 @@ export default function App() {
             className="flex shrink-0 items-center gap-1.5 rounded-full border border-stone-700 bg-stone-800 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:bg-stone-700"
           >
             <Icon name="grinder" size={14} />
-            {myGrinder ?? '설정'}
+            {myGrinderProfile?.name ?? '설정'}
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-5 pt-5">
+      {/* 최상위 화면 전환 */}
+      <div className="mx-auto max-w-4xl px-5 pt-4">
+        <nav aria-label="화면" className="flex gap-1 rounded-xl border border-stone-700 bg-stone-800 p-1">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              aria-current={view === v.id ? 'page' : undefined}
+              onClick={() => setView(v.id)}
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
+                view === v.id ? 'bg-amber-700 text-white' : 'text-stone-400 hover:bg-stone-700 hover:text-stone-200'
+              }`}
+            >
+              {v.label}
+              {v.id === 'logs' && brewLogs.length > 0 && (
+                <span className="ml-1.5 font-mono text-[11px] opacity-70">{brewLogs.length}</span>
+              )}
+              {v.id === 'beans' && beans.filter((b) => !b.finished).length > 0 && (
+                <span className="ml-1.5 font-mono text-[11px] opacity-70">{beans.filter((b) => !b.finished).length}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {view === 'logs' && (
+        <main className="mx-auto max-w-4xl px-5 pt-5">
+          <LogsView
+            logs={brewLogs}
+            beans={beans}
+            onOpenRecipe={(recipeId) => {
+              setView('recipes');
+              setSheet({ kind: 'detail', id: recipeId });
+            }}
+            onEdit={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
+            onDelete={(id) => setBrewLogs((prev) => prev.filter((l) => l.id !== id))}
+          />
+        </main>
+      )}
+
+      {view === 'beans' && (
+        <main className="mx-auto max-w-4xl px-5 pt-5">
+          <BeansView
+            beans={beans}
+            logs={brewLogs}
+            onSave={saveBean}
+            onDelete={(id) => setBeans((prev) => prev.filter((b) => b.id !== id))}
+          />
+        </main>
+      )}
+
+      <main className={`mx-auto max-w-4xl px-5 pt-5 ${view === 'recipes' ? '' : 'hidden'}`}>
         {/* 카테고리 탭 */}
         <nav aria-label="추출 방식" className="scrollbar-hide -mx-5 mb-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {CATEGORIES.map((cat) => {
@@ -139,7 +230,8 @@ export default function App() {
                 key={recipe.id}
                 recipe={recipe}
                 favorite={favorites.has(recipe.id)}
-                myGrinder={myGrinder}
+                myGrinder={myGrinderProfile}
+                calibration={calibration}
                 onOpen={() => setSheet({ kind: 'detail', id: recipe.id })}
                 onToggleFavorite={() => toggleFavorite(recipe.id)}
               />
@@ -158,6 +250,7 @@ export default function App() {
       {/* 레시피 추가 */}
       <button
         type="button"
+        hidden={view !== 'recipes'}
         onClick={() => setSheet({ kind: 'form', id: null })}
         className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-amber-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-black/40 transition hover:bg-amber-500"
       >
@@ -176,6 +269,13 @@ export default function App() {
           soundOn={soundOn}
           onEdit={detailRecipe.custom ? () => setSheet({ kind: 'form', id: detailRecipe.id }) : undefined}
           onDelete={detailRecipe.custom ? () => deleteRecipe(detailRecipe.id) : undefined}
+          logs={logsForRecipe(brewLogs, detailRecipe.id)}
+          onLogBrew={(actualSec, beanG) =>
+            setSheet({ kind: 'log', recipeId: detailRecipe.id, logId: null, actualSec, beanG })
+          }
+          onOpenLog={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
+          myGrinder={myGrinderProfile}
+          calibration={calibration}
         />
       )}
 
@@ -188,16 +288,32 @@ export default function App() {
         />
       )}
 
+      {sheet?.kind === 'log' && logSheetRecipe && (
+        <BrewLogForm
+          recipe={sheet.beanG ? { ...logSheetRecipe, beanG: sheet.beanG } : logSheetRecipe}
+          beans={beans}
+          actualSec={sheet.actualSec}
+          existing={sheet.logId ? brewLogs.find((l) => l.id === sheet.logId) : undefined}
+          myGrinder={myGrinderProfile}
+          calibration={calibration}
+          onSave={saveLog}
+          onClose={() => setSheet({ kind: 'detail', id: sheet.recipeId })}
+        />
+      )}
+
       {sheet?.kind === 'settings' && (
         <SettingsSheet
           onClose={() => setSheet(null)}
-          grinders={grinders}
           myGrinder={myGrinder}
           onMyGrinderChange={setMyGrinder}
+          calibration={calibration}
+          onCalibrationChange={setCalibration}
           soundOn={soundOn}
           onSoundChange={setSoundOn}
           customRecipes={customRecipes}
-          onImport={importRecipes}
+          brewLogs={brewLogs}
+          beans={beans}
+          onImport={importBackup}
         />
       )}
     </div>

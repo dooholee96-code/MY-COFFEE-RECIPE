@@ -7,6 +7,7 @@
 - `npm run dev` / `npm run build` / `npm run build:single` (단일 HTML 산출물)
 - `npm test` — vitest. `npm run smoke` — 빌드 후 Playwright 로 실제 브라우저 확인
 - `npm run lint` / `npm run typecheck`
+- `npm run smoke:pwa` — 배포 빌드(dist/)를 HTTP 로 띄워 서비스 워커·오프라인·매니페스트 확인
 
 `smoke` 는 Chromium 이 필요합니다. 이 저장소가 원격 세션에서 돌 때는
 `CHROME_PATH=/opt/pw-browsers/chromium-*/chrome-linux/chrome` 를 넘기세요.
@@ -26,6 +27,19 @@
 - **접근성을 깨지 마세요.** 누를 수 있는 것은 `<button>` 입니다. 모달은 `Modal.tsx` 를 쓰세요
   (Esc, 포커스 가두기·복귀, 스크롤 잠금이 들어 있습니다).
 - **localStorage 접근은 `lib/storage.ts` 를 거칩니다.** 시크릿 모드에서 던지는 예외를 감쌉니다.
+
+## 빌드 두 가지
+
+- `build:single` → `dist-single/index.html` 한 파일. 폰에 복사해 `file://` 로 연다. 서비스 워커 없음.
+- `build` → `dist/`. GitHub Pages 배포본 (`.github/workflows/deploy.yml`, `main` 푸시 시).
+  `vite.config.ts` 의 `pwa()` 플러그인이 매니페스트 링크와 `sw.js` 를 넣는다. `__PWA__` 로 갈린다.
+
+서비스 워커(`pwa/sw.template.js`)를 고칠 때:
+- 자리표시자(`{{VERSION}}`, `{{PRECACHE}}`)는 코드에 정확히 한 번씩만 — 주석에 쓰지 마세요.
+  `fill()` 이 개수가 1 이 아니면 빌드를 실패시킵니다. (주석에 같은 문자열이 있어서 코드 대신 주석이
+  채워진 적이 있습니다. 그 상태로 배포되면 워커가 로드 중에 죽고 오프라인이 조용히 안 됩니다.)
+- 고친 뒤 `npm run smoke:pwa` 로 오프라인 재진입을 확인하세요.
+- 워커는 localStorage(사용자 기록)를 건드리지 않습니다.
 
 ## 디자인
 

@@ -24,11 +24,40 @@ npm run build:single # dist-single/index.html — 외부 의존성 없는 단일
 `build:single` 로 나온 `dist-single/index.html` 은 파일 하나로 완결됩니다. 폰에 복사해서
 바로 열거나, 아무 정적 호스팅에나 올리면 됩니다. 네트워크 없이도 동작합니다.
 
+## GitHub Pages 배포
+
+주소: **https://dooholee96-code.github.io/MY-COFFEE-RECIPE/**
+
+`main` 에 푸시하면 `.github/workflows/deploy.yml` 이 검사(lint·테스트) → 빌드 → 배포합니다.
+검사가 실패하면 배포하지 않으므로, 잘못된 빌드가 돌고 있는 사이트를 덮어쓰지 않습니다.
+
+처음 한 번만:
+
+1. **`main` 브랜치 만들기** — 지금은 작업 브랜치만 있습니다. 이 브랜치를 `main` 으로 만들고
+   Settings → General → Default branch 를 `main` 으로 바꿉니다.
+2. **Pages 켜기** — Settings → Pages → Build and deployment → Source 를 **GitHub Actions** 로.
+
+배포본은 단일 HTML 파일과 달리:
+
+- **홈 화면에 추가**하면 앱처럼 열립니다 (아이콘, 전체 화면).
+- **서비스 워커**가 파일을 저장해 두어 오프라인에서도 열립니다. 온라인이면 새 배포본을 받아옵니다.
+
+알아둘 것:
+
+- **기록은 기기마다, 주소마다 따로입니다.** 기록·원두·즐겨찾기는 서버가 아니라 그 브라우저에
+  저장됩니다. 파일로 열던 버전과 Pages 버전은 서로 다른 저장소를 씁니다 — 옮기려면
+  설정 → 백업에서 내보내고 불러오세요. 기록은 공개되지 않습니다.
+- **공개 사이트입니다.** 주소를 아는 사람은 누구나 레시피를 볼 수 있습니다 (저장소도 공개).
+- 같은 계정의 다른 Pages 프로젝트와 브라우저 저장소를 공유합니다(`dooholee96-code.github.io`).
+  이 앱의 키는 `mcr:` 로 시작해 겹치지 않지만, 다른 앱이 저장소 전체를 지우면 같이 지워집니다.
+  가끔 백업을 내보내 두세요.
+
 ## 검증
 
 ```bash
 npm test        # 단위 테스트 (계산·필터·데이터 정합성)
-npm run smoke   # 실제 크로미움에서 도는지 확인 (빌드 후 Playwright)
+npm run smoke   # 단일 HTML 파일이 실제 크로미움에서 도는지 (빌드 후 Playwright)
+npm run smoke:pwa  # 배포본: 서비스 워커 설치, 네트워크를 끊고도 열리는지, 매니페스트
 npm run lint
 npm run typecheck
 ```
@@ -46,7 +75,10 @@ src/
   lib/storage.ts        localStorage 래퍼
   hooks/useBrewTimer.ts 시각 기준 타이머, 화면 꺼짐 방지
   components/           UI
-scripts/smoke.mjs       브라우저 스모크 테스트
+scripts/smoke.mjs       브라우저 스모크 테스트 (단일 파일)
+scripts/smoke-pwa.mjs   배포본 오프라인·설치 테스트
+pwa/sw.template.js      서비스 워커 (빌드 때 파일 목록이 채워진다)
+public/                 매니페스트, 앱 아이콘
 ```
 
 계산과 필터링은 UI에서 떼어내 `lib/` 에 두고 테스트로 묶어 뒀습니다. 레시피 수치는

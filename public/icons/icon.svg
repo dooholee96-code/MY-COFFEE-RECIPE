@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 풀블리드 배경: 안드로이드 마스커블 아이콘이 원/물방울로 잘려도 모서리가 비지 않게 -->
+  <rect width="512" height="512" fill="#2a1c13"/>
+  <!-- 내용은 가운데 60% 안전 영역 안에 -->
+  <g transform="translate(-17 14)" fill="none" stroke="#f3ece2" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M330 222h14a42 42 0 0 1 0 84h-14"/>
+    <path d="M160 222h170v98a56 56 0 0 1-56 56h-58a56 56 0 0 1-56-56Z"/>
+    <path d="M200 150c-10-16 10-26 0-42M245 150c-10-16 10-26 0-42M290 150c-10-16 10-26 0-42" stroke="#d98a55"/>
+  </g>
+</svg>

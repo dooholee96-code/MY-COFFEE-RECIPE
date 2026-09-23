@@ -1,0 +1,57 @@
+# GitHub Pages 배포.
+#
+# main 에 푸시되면 검사 → 빌드 → 배포. 검사(lint, 타입, 테스트)가 하나라도 실패하면
+# 배포하지 않는다 — 잘못된 빌드가 이미 잘 돌고 있는 사이트를 덮어쓰지 않게.
+# Actions 탭의 "Run workflow" 로 손으로 돌릴 수도 있다.
+#
+# 처음 한 번: 저장소 Settings → Pages → Build and deployment → Source 를 "GitHub Actions" 로.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 뒤의 것이 기다린다 (진행 중인 배포를 끊지 않는다)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # 브라우저 스모크 테스트는 로컬에서 돌린다. CI 에서는 브라우저를 받지 않는다.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

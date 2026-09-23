@@ -4,6 +4,8 @@ import { activeStepIndex, cumulativeWater, formatSec, isAutoPlayable } from '../
 import { useBrewTimer, useWakeLock } from '../hooks/useBrewTimer';
 import { beep, unlockAudio, vibrate } from '../lib/sound';
 import { Icon } from './Icon';
+import { PourGlyph } from './PourGlyph';
+import { describePour } from '../lib/pour';
 
 interface Props {
   recipe: Recipe;
@@ -115,21 +117,31 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
             </button>
           </div>
         ) : step ? (
-          <>
-            <p className="text-lg font-bold text-ink">
-              {step.label}
-              {step.waterG !== null && step.waterG > 0 && (
-                <span className="ml-2 num text-crema">+{step.waterG}g</span>
-              )}
-            </p>
-            {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
-            {auto && next && (
-              <p className="mt-1 text-xs text-ink-faint">
-                다음: {next.label}
-                {secondsToNext !== null && ` · ${secondsToNext}초 후`}
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold text-ink">
+                {step.label}
+                {step.waterG !== null && step.waterG > 0 && (
+                  <span className="ml-2 num text-crema">+{step.waterG}g</span>
+                )}
               </p>
+              {/* 붓는 방식 — 주전자를 든 채 읽어야 하므로 굵게 */}
+              {describePour(step.pour) && (
+                <p className="mt-0.5 text-sm font-bold text-crema-deep">{describePour(step.pour)}</p>
+              )}
+              {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
+              {auto && next && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  다음: {next.label}
+                  {describePour(next.pour) && ` (${describePour(next.pour)})`}
+                  {secondsToNext !== null && ` · ${secondsToNext}초 후`}
+                </p>
+              )}
+            </div>
+            {step.pour && describePour(step.pour) && (
+              <PourGlyph key={current} pour={step.pour} size={76} />
             )}
-          </>
+          </div>
         ) : null}
       </div>
 

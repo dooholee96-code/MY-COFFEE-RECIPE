@@ -1,4 +1,5 @@
 import type { BrewLog, Recipe, TasteVerdict } from '../types';
+import { type GrinderProfile, oneStepLabel } from './grinders';
 
 export interface Adjustment {
   /** 다음에 바꿀 것 한 가지 */
@@ -31,9 +32,12 @@ export const TASTE_OPTIONS: { id: TasteVerdict; label: string; hint: string }[] 
 export function suggestAdjustment(
   taste: TasteVerdict,
   context?: { targetSec?: number; actualSec?: number },
+  grinder?: GrinderProfile,
 ): Adjustment {
   const target = context?.targetSec;
   const actual = context?.actualSec;
+  // 조언의 "한 칸"을 내 그라인더 단위로 — Femobook A2 면 코만단테 한 클릭 ≈ 2클릭
+  const step = oneStepLabel(grinder);
 
   // 목표 대비 25% 이상 어긋나면 흐름부터 잡는다
   if (target && actual && target > 0) {
@@ -57,13 +61,13 @@ export function suggestAdjustment(
   switch (taste) {
     case 'sour':
       return {
-        headline: '분쇄도를 한 클릭 가늘게',
+        headline: `분쇄도를 ${step} 가늘게`,
         reason: '신맛은 대개 과소추출입니다. 가늘게 갈면 접촉 면적이 늘어 단맛이 먼저 올라옵니다.',
         alternatives: ['물 온도를 2~3℃ 올리기', '뜸을 10초 더 주기', '물줄기를 가늘게 해 추출 시간 늘리기'],
       };
     case 'bitter':
       return {
-        headline: '분쇄도를 한 클릭 굵게',
+        headline: `분쇄도를 ${step} 굵게`,
         reason: '쓴맛과 텁텁함은 대개 과다추출입니다. 굵게 갈면 물이 빨리 빠져 과추출 구간을 피합니다.',
         alternatives: ['물 온도를 2~3℃ 내리기', '교반을 줄이기', '마지막 물줄기를 생략해 일찍 종료'],
       };
@@ -71,19 +75,19 @@ export function suggestAdjustment(
       return {
         headline: '원두량을 1~2g 늘리기',
         reason: '농도가 옅습니다. 추출 자체가 아니라 비율 문제일 가능성이 높으니 분쇄도보다 원두량을 먼저 봅니다.',
-        alternatives: ['가수를 줄이거나 생략', '분쇄도를 한 클릭 가늘게', '물 양을 줄여 비율 낮추기'],
+        alternatives: ['가수를 줄이거나 생략', `분쇄도를 ${step} 가늘게`, '물 양을 줄여 비율 낮추기'],
       };
     case 'strong':
       return {
         headline: '가수를 늘리거나 물 양을 늘리기',
         reason: '맛 자체가 나쁜 게 아니라 농도가 높은 상태입니다. 추출 변수를 건드리기 전에 희석으로 맞춰 봅니다.',
-        alternatives: ['원두량을 1~2g 줄이기', '분쇄도를 한 클릭 굵게'],
+        alternatives: ['원두량을 1~2g 줄이기', `분쇄도를 ${step} 굵게`],
       };
     case 'balanced':
       return {
         headline: '이대로 반복',
         reason: '맞았습니다. 이 기록의 분쇄도와 시간을 그대로 다시 쓰세요.',
-        alternatives: ['원두가 더 디게싱되면 한 클릭 가늘게 가야 할 수 있습니다'],
+        alternatives: [`원두가 더 디게싱되면 ${step} 가늘게 가야 할 수 있습니다`],
       };
   }
 }

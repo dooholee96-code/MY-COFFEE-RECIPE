@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   GRINDERS,
   beanAnchorFor,
+  conversionSpread,
+  convertAll,
+  oneStepLabel,
   calibrationForBean,
   convertClicks,
   convertSetting,
@@ -104,8 +107,12 @@ describe('matchGrinderProfile', () => {
     expect(matchGrinderProfile('타임모어')?.id).toBe('timemore');
     expect(matchGrinderProfile('Femobook A2')?.id).toBe('femobook-a2');
   });
+  it('EK43 은 다이얼 종류를 구분한다 — 적혀 있지 않으면 0~16', () => {
+    expect(matchGrinderProfile('EK43')?.id).toBe('ek43');
+    expect(matchGrinderProfile('EK43 (1~11)')?.id).toBe('ek43-1-11');
+  });
   it('모르는 그라인더는 undefined', () => {
-    expect(matchGrinderProfile('EK43')).toBeUndefined();
+    expect(matchGrinderProfile('Baratza Encore')).toBeUndefined();
   });
 });
 
@@ -163,5 +170,83 @@ describe('원두별 기준점', () => {
     expect(beanAnchorFor(bean({ grindAnchor: { grinderId: 'femobook-a2', clicks: 43 } }), femobook)).toBe(43);
     expect(beanAnchorFor(bean(), femobook)).toBeNull();
     expect(beanAnchorFor(bean({ grindAnchor: { grinderId: 'femobook-a2', clicks: 43 } }), undefined)).toBeNull();
+  });
+});
+
+describe('EK43', () => {
+  const ek43 = findGrinder('ek43')!;
+  const ek43old = findGrinder('ek43-1-11')!;
+
+  it('두 다이얼은 같은 입자 범위(180~803µm)를 다른 칸 수로 나눈다', () => {
+    // 0~16 다이얼: 16칸, 1~11 다이얼: 10칸
+    expect(ek43.micronsPerClick * 16).toBeCloseTo(623, -1);
+    expect(ek43old.micronsPerClick * 10).toBeCloseTo(623, -1);
+  });
+
+  it('기준점이 코만단테 22클릭에 대응한다', () => {
+    expect(convertClicks(22, comandante, ek43)).toBe(13.5);
+    expect(convertClicks(13.5, ek43, femobook)).toBe(45);
+  });
+
+  it('레시피의 EK43 값을 Femobook 으로 환산한다', () => {
+    expect(convertSetting('13~14', ek43, femobook)?.text).toBe('44~46');
+    expect(convertSetting('12.5~13', ek43, femobook)?.text).toBe('43~44');
+    expect(convertSetting('9.0', ek43old, femobook)?.text).toBe('43.5');
+  });
+
+  it('용챔의 EK43 9.0 은 1~11 다이얼로 읽어야 옆의 코만단테 값과 가깝다', () => {
+    // 0~16 으로 읽으면 약 35클릭 — 코만단테 26~28(→ 51.5~55)과 20클릭 가까이 벌어진다
+    const as0to16 = convertClicks(9, ek43, femobook);
+    const as1to11 = convertClicks(9, ek43old, femobook);
+    const fromComandante = convertClicks(27, comandante, femobook);
+    expect(Math.abs(fromComandante - as1to11)).toBeLessThan(Math.abs(fromComandante - as0to16));
+  });
+});
+
+describe('convertAll / conversionSpread', () => {
+  it('레시피에 적힌 값을 모두 환산하고 벌어진 정도를 잰다', () => {
+    const settings = [
+      { grinder: '코만단테', setting: '26~27' },
+      { grinder: 'EK43', setting: '13~14' },
+    ];
+    const all = convertAll(settings, femobook);
+    expect(all.map((c) => c.converted.text)).toEqual(['51.5~53.5', '44~46']);
+    expect(conversionSpread(all)).toBe(7.5);
+  });
+
+  it('잘 맞는 두 값은 차이가 작다 (4666: 코만단테 22~24, 타임모어 18)', () => {
+    const all = convertAll(
+      [
+        { grinder: '코만단테', setting: '22~24' },
+        { grinder: '타임모어', setting: '18' },
+      ],
+      femobook,
+    );
+    expect(conversionSpread(all)).toBe(2);
+  });
+
+  it('모르는 그라인더, 숫자 없는 표기, 내 그라인더로 직접 적힌 값은 건너뛴다', () => {
+    const all = convertAll(
+      [
+        { grinder: 'Baratza', setting: '14' },
+        { grinder: '코만단테', setting: '아주 굵게' },
+        { grinder: 'Femobook A2', setting: '44' },
+        { grinder: '코만단테', setting: '22' },
+      ],
+      femobook,
+    );
+    expect(all).toHaveLength(1);
+    expect(conversionSpread(all)).toBe(0);
+  });
+});
+
+describe('oneStepLabel', () => {
+  it('코만단테 한 클릭을 내 그라인더 단위로', () => {
+    expect(oneStepLabel(undefined)).toBe('한 클릭');
+    expect(oneStepLabel(comandante)).toBe('한 클릭');
+    expect(oneStepLabel(femobook)).toBe('2클릭'); // 30 / 18 ≈ 1.7
+    expect(oneStepLabel(findGrinder('timemore'))).toBe('1클릭');
+    expect(oneStepLabel(findGrinder('ek43'))).toBe('0.75눈금'); // 30 / 38.9
+    expect(oneStepLabel(findGrinder('ek43-1-11'))).toBe('0.5눈금'); // 30 / 62.3
   });
 });

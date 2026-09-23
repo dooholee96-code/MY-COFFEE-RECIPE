@@ -1,4 +1,4 @@
-import type { Bean } from '../types';
+import type { Bean, GrinderSetting } from '../types';
 
 /**
  * 그라인더 사이의 분쇄도 환산.
@@ -33,6 +33,8 @@ export interface GrinderProfile {
   pourOverRange?: [number, number];
   /** 조절 가능한 전체 범위 */
   maxClicks?: number;
+  /** 한 단위를 부르는 말. 대부분 '클릭', EK43 처럼 다이얼 숫자로 맞추는 기계는 '눈금' */
+  unit?: '클릭' | '눈금';
   note?: string;
 }
 
@@ -56,6 +58,33 @@ export const GRINDERS: GrinderProfile[] = [
     pourOverRange: [40, 80],
     maxClicks: 120,
     note: '40클릭 = 1바퀴 · 38mm 헵타고널 코니컬 버 · 클릭당 18µm',
+  },
+  // ── EK43 ─────────────────────────────────────────────────────────────────
+  // Honest Coffee Guide 는 EK43 다이얼 두 종류(0~16, 1~11) 모두 입자 크기 180~803µm 를 덮는다고 하고,
+  // 작은 눈금 한 칸이 약 10µm 라고 한다. 두 설명은 서로 맞는다 — 0~16 다이얼은 숫자 하나에 네 칸,
+  // 약 39µm (= 623µm / 16), 1~11 다이얼은 숫자 하나에 약 62µm (= 623µm / 10).
+  //
+  // 기준점은 같은 자료의 입자 크기 척도에서 코만단테 22클릭(약 704µm, 32µm × 22)과 같은 자리다.
+  // EK43 은 매장마다 0점 보정이 제각각이라 이 환산은 다른 그라인더보다 더 거칠다.
+  {
+    id: 'ek43',
+    name: 'EK43 (0~16)',
+    micronsPerClick: 38.9,
+    v60Anchor: 13.5,
+    pourOverRange: [8, 16],
+    maxClicks: 16,
+    unit: '눈금',
+    note: '0~16 다이얼 · 숫자 하나 ≈ 39µm',
+  },
+  {
+    id: 'ek43-1-11',
+    name: 'EK43 (1~11)',
+    micronsPerClick: 62.3,
+    v60Anchor: 9.4,
+    pourOverRange: [6, 11],
+    maxClicks: 11,
+    unit: '눈금',
+    note: '1~11 다이얼(구형) · 숫자 하나 ≈ 62µm',
   },
   {
     id: 'timemore',
@@ -84,6 +113,10 @@ export function matchGrinderProfile(name: string): GrinderProfile | undefined {
   if (n.includes('타임모어') || n.includes('timemore')) return findGrinder('timemore');
   if (n.includes('femobook') || n.includes('페모북')) return findGrinder('femobook-a2');
   if (n.includes('킹그라인더') || n.includes('kingrinder')) return findGrinder('kingrinder-k6');
+  if (n.includes('ek43') || n.includes('ek 43')) {
+    // 다이얼 종류가 적혀 있지 않으면 0~16 으로 본다 — 현행 다이얼이고 이 앱 레시피 대부분이 그 값이다
+    return n.includes('1~11') || n.includes('1-11') ? findGrinder('ek43-1-11') : findGrinder('ek43');
+  }
   return undefined;
 }
 
@@ -164,4 +197,62 @@ export function convertSetting(
   const outOfRange = range ? converted.some((n) => n < range[0] || n > range[1]) : false;
 
   return { text, outOfRange };
+}
+
+export interface SourceConversion {
+  /** 레시피에 적힌 원래 표기 */
+  source: GrinderSetting;
+  from: GrinderProfile;
+  converted: ConvertedSetting;
+  /** 환산값의 중앙 (비교용) */
+  mid: number;
+}
+
+/**
+ * 레시피에 적힌 모든 그라인더 값을 내 그라인더로 환산한다.
+ * 모르는 그라인더나 숫자가 없는 표기는 건너뛴다. 내 그라인더로 직접 적힌 값도 건너뛴다(환산할 게 없다).
+ */
+export function convertAll(
+  settings: GrinderSetting[],
+  to: GrinderProfile,
+  calibration?: Calibration,
+): SourceConversion[] {
+  const out: SourceConversion[] = [];
+  for (const source of settings) {
+    const from = matchGrinderProfile(source.grinder);
+    if (!from || from.id === to.id) continue;
+    const converted = convertSetting(source.setting, from, to, calibration);
+    if (!converted) continue;
+    const nums = converted.text.split('~').map(Number);
+    const mid = nums.reduce((a, b) => a + b, 0) / nums.length;
+    out.push({ source, from, converted, mid });
+  }
+  return out;
+}
+
+/**
+ * 서로 다른 그라인더 값에서 나온 환산이 얼마나 벌어지는지 (내 그라인더 단위).
+ * 원본 레시피가 두 그라인더 값을 함께 적었는데 환산이 크게 다르면, 둘 중 하나의 보정이
+ * 우리 가정과 다르다는 뜻이다. 사용자에게 숨기지 않고 보여준다.
+ */
+export function conversionSpread(conversions: SourceConversion[]): number {
+  if (conversions.length < 2) return 0;
+  const mids = conversions.map((c) => c.mid);
+  return Math.round((Math.max(...mids) - Math.min(...mids)) * 2) / 2;
+}
+
+/**
+ * "한 칸 가늘게" 같은 조정 조언을 내 그라인더 단위로.
+ * 조정 조언의 기준은 코만단테 한 클릭(30µm)이다. Femobook A2(18µm)라면 약 2클릭.
+ */
+export function oneStepLabel(grinder: GrinderProfile | undefined): string {
+  const comandante = findGrinder('comandante')!;
+  if (!grinder || grinder.id === comandante.id) return '한 클릭';
+  const unit = grinder.unit ?? '클릭';
+  const raw = comandante.micronsPerClick / grinder.micronsPerClick;
+  if (unit === '눈금') {
+    const q = Math.max(0.25, Math.round(raw * 4) / 4);
+    return `${q}${unit}`;
+  }
+  return `${Math.max(1, Math.round(raw))}${unit}`;
 }

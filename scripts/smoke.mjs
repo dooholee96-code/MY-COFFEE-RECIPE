@@ -26,6 +26,53 @@ await step('17개 레시피가 보인다', async () => {
   if (n !== 17) throw new Error(`카드 ${n}개`);
 });
 
+await step('처음 열면 Femobook A2 가 기본 그라인더다', async () => {
+  const body = await page.textContent('main');
+  // 4666 V2 — 코만단테 22~24 → Femobook 45~48.5
+  if (!body.includes('Femobook A2 45~48.5')) throw new Error(`기본 환산이 안 보인다: ${body.slice(0, 300)}`);
+});
+
+await step('V60 깔끔 레시피는 코만단테와 EK43 을 각각 환산하고 차이를 알린다', async () => {
+  await page.getByRole('button', { name: '하리오 V60 깔끔 레시피', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  await d.getByText('← EK43 (0~16) 13~14').waitFor();
+  const body = await d.textContent();
+  if (!body.includes('51.5~53.5')) throw new Error('코만단테 환산 없음');
+  if (!body.includes('44~46')) throw new Error('EK43 환산 없음');
+  if (!body.includes('7.5클릭 차이')) throw new Error('차이 안내 없음');
+  // 푸어 방식: 회차마다 물줄기가 굵어진다
+  for (const t of ['가는 물줄기', '중간 물줄기', '굵은 물줄기']) if (!body.includes(t)) throw new Error(`${t} 없음`);
+  await page.keyboard.press('Escape');
+});
+
+await step('용챔 레시피의 EK43 은 1~11 다이얼로 표시된다', async () => {
+  await page.getByRole('button', { name: '용챔 약배전 (15g)', exact: true }).click();
+  await page.locator('[role=dialog]').getByText('← EK43 (1~11) 9.0').waitFor();
+  await page.keyboard.press('Escape');
+});
+
+await step('카스야 4:6 은 나선 푸어가 움직이는 그림으로 나온다', async () => {
+  await page.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  // 타이머 카드 — 움직이는 그림 (animateMotion 이 들어 있다)
+  const live = d.locator('[aria-live=polite] svg[role=img][aria-label="나선"]');
+  await live.waitFor();
+  if ((await live.locator('animateMotion').count()) !== 1) throw new Error('나선 그림이 움직이지 않는다');
+  // 단계 표 — 다섯 푸어 모두 정지 그림
+  const table = d.locator('ol svg[role=img][aria-label="나선"]');
+  if ((await table.count()) !== 5) throw new Error(`단계 표 그림 ${await table.count()}개`);
+  if ((await table.locator('animate, animateMotion').count()) !== 0) throw new Error('단계 표 그림이 움직인다');
+  await d.getByText('붓는 방식 출처').waitFor();
+  await page.keyboard.press('Escape');
+});
+
+await step('원두량 조절 기능은 없다', async () => {
+  await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
+  const n = await page.locator('[role=dialog]').getByText('원두량 조정').count();
+  if (n) throw new Error('원두량 조정이 남아 있다');
+  await page.keyboard.press('Escape');
+});
+
 await step('검색이 목록을 줄인다', async () => {
   await page.fill('input[type=search]', '카스야');
   await page.waitForFunction(() => document.querySelectorAll('article').length === 2);
@@ -69,15 +116,6 @@ await step('타이머가 돌고 단계가 넘어간다', async () => {
   const t1 = await clock.textContent();
   if (t1 === t0) throw new Error('시계가 멈춰 있다');
   console.log(`      시계 ${t0} → ${t1}`);
-});
-
-await step('원두량을 바꾸면 물이 비례 조정된다', async () => {
-  const d = page.locator('[role=dialog]');
-  await d.getByRole('button', { name: '원두량 1g 늘리기' }).click(); // 18 → 19g
-  await page.waitForFunction(() =>
-    document.querySelector('[role=dialog]')?.textContent?.includes('19g 기준으로 조정됨'));
-  const body = await d.textContent();
-  if (!body.includes('232g')) throw new Error('220g × 19/18 = 232g 이 안 보인다');
 });
 
 await step('HOT/ICE 버전 전환이 된다', async () => {
@@ -127,7 +165,7 @@ await step('추출을 기록하면 조정 제안이 나온다', async () => {
   await page.waitForFunction(() =>
     document.querySelector('[role=dialog] h2')?.textContent?.includes('추출 기록'));
   await page.getByRole('button', { name: '시다', exact: true }).click();
-  await page.waitForSelector('text=분쇄도를 한 클릭 가늘게');
+  await page.waitForSelector('text=분쇄도를 2클릭 가늘게'); // Femobook A2 기준
   // 타이머를 돌리지 않았으므로 시간 칸은 비어 있어야 한다 (0 이 아니라)
   const sec = await d.locator('#bl-sec').inputValue();
   if (sec !== '') throw new Error(`시간 칸에 ${sec} 가 들어 있다`);
@@ -149,8 +187,8 @@ await step('기록 화면에 남고 레시피에도 되비친다', async () => {
 });
 
 await step('Femobook A2 를 고르면 분쇄도가 환산된다', async () => {
-  await page.getByRole('button', { name: /설정/ }).click();
-  await page.getByRole('button', { name: 'Femobook A2' }).click();
+  await page.getByRole('button', { name: /^설정/ }).click();
+  await page.getByRole('button', { name: 'Femobook A2', exact: true }).click();
   await page.waitForSelector('text=환산 기준 보정');
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
@@ -161,7 +199,7 @@ await step('Femobook A2 를 고르면 분쇄도가 환산된다', async () => {
 });
 
 await step('보정하면 환산값이 함께 움직인다', async () => {
-  await page.getByRole('button', { name: /Femobook A2/ }).click();
+  await page.getByRole('button', { name: /^설정/ }).click();
   await page.getByRole('button', { name: '기준 1클릭 늘리기' }).click(); // 45 → 46
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role=dialog]', { state: 'detached' });

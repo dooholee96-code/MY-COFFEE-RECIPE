@@ -88,6 +88,7 @@ export function BrewLogForm({
         Number.isFinite(parsedElapsed) && parsedElapsed
           ? { targetSec: recipe.totalSec, actualSec: parsedElapsed }
           : { targetSec: recipe.totalSec },
+        myGrinder,
       )
     : null;
 

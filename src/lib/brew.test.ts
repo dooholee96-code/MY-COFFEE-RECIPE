@@ -6,7 +6,6 @@ import {
   formatRatio,
   formatSec,
   isAutoPlayable,
-  scaleRecipe,
   servedVolumeG,
   targetWaterAt,
 } from './brew';
@@ -67,62 +66,6 @@ describe('isAutoPlayable', () => {
   });
   it('수위를 보며 붓는 레시피는 자동 진행 불가', () => {
     expect(isAutoPlayable(byId('ansta-party-hot'))).toBe(false);
-  });
-});
-
-describe('scaleRecipe', () => {
-  it('원두량에 비례해 물을 조정한다', () => {
-    const scaled = scaleRecipe(byId('4666-v2-hot'), 36); // 18g → 36g, 2배
-    expect(scaled.beanG).toBe(36);
-    expect(scaled.waterG).toBe(440);
-    expect(scaled.steps.map((s) => s.waterG)).toEqual([80, 120, 120, 120]);
-  });
-
-  it('반올림해도 단계 합이 총량과 어긋나지 않는다', () => {
-    for (const recipe of seedRecipes) {
-      for (const dose of [7, 11, 13.5, 17, 23, 31, 50]) {
-        const scaled = scaleRecipe(recipe, dose);
-        const sum = scaled.steps.reduce((acc, s) => acc + (s.waterG ?? 0), 0);
-        // 양이 눈대중인 단계가 있는 레시피는 합계를 검증할 수 없다
-        if (scaled.steps.some((s) => s.waterG === null)) continue;
-        expect(sum, `${recipe.id} @ ${dose}g`).toBe(scaled.waterG);
-      }
-    }
-  });
-
-  it('비율은 보존된다', () => {
-    const scaled = scaleRecipe(byId('kasuya-46-hot'), 15);
-    expect(brewRatio(scaled)).toBeCloseTo(brewRatio(byId('kasuya-46-hot')), 1);
-  });
-
-  it('시간과 온도는 건드리지 않는다', () => {
-    const base = byId('kasuya-46-hot');
-    const scaled = scaleRecipe(base, 40);
-    expect(scaled.tempC).toBe(base.tempC);
-    expect(scaled.totalSec).toBe(base.totalSec);
-    expect(scaled.steps.map((s) => s.atSec)).toEqual(base.steps.map((s) => s.atSec));
-  });
-
-  it('가수·얼음·우유도 함께 조정한다', () => {
-    const scaled = scaleRecipe(byId('484-original-hot'), 40); // 20g → 40g
-    expect(scaled.finishing?.waterG).toBe(240);
-    const ole = scaleRecipe(byId('liike-cafeole-hot'), 11); // 22g → 11g
-    expect(ole.finishing?.milkG).toBe(60);
-    const ice = scaleRecipe(byId('v60-clean-ice'), 10); // 20g → 10g
-    expect(ice.finishing?.iceG).toBe(80);
-  });
-
-  it('같은 양이거나 잘못된 양이면 원본을 그대로 돌려준다', () => {
-    const base = byId('4666-v2-hot');
-    expect(scaleRecipe(base, 18)).toBe(base);
-    expect(scaleRecipe(base, 0)).toBe(base);
-    expect(scaleRecipe(base, -3)).toBe(base);
-  });
-
-  it('눈대중 단계가 있어도 깨지지 않는다', () => {
-    const scaled = scaleRecipe(byId('ansta-party-hot'), 40);
-    expect(scaled.steps[0]?.waterG).toBe(80);
-    expect(scaled.steps[1]?.waterG).toBeNull();
   });
 });
 

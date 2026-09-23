@@ -24,7 +24,7 @@ type Sheet =
   | { kind: 'detail'; id: string }
   | { kind: 'form'; id: string | null }
   | { kind: 'settings' }
-  | { kind: 'log'; recipeId: string; logId: string | null; actualSec?: number; beanG?: number }
+  | { kind: 'log'; recipeId: string; logId: string | null; actualSec?: number }
   | null;
 
 /** 최상위 화면 */
@@ -43,7 +43,7 @@ export default function App() {
 
   const [favoriteIds, setFavoriteIds] = usePersistentState<string[]>(KEYS.favorites, []);
   const [customRecipes, setCustomRecipes] = usePersistentState<Recipe[]>(KEYS.customRecipes, []);
-  const [myGrinder, setMyGrinder] = usePersistentState<string | null>(KEYS.myGrinder, null);
+  const [myGrinder, setMyGrinder] = usePersistentState<string | null>(KEYS.myGrinder, 'femobook-a2');
   const [soundOn, setSoundOn] = usePersistentState<boolean>(KEYS.soundOn, true);
   const [brewLogs, setBrewLogs] = usePersistentState<BrewLog[]>(KEYS.brewLogs, []);
   const [beans, setBeans] = usePersistentState<Bean[]>(KEYS.beans, []);
@@ -307,9 +307,7 @@ export default function App() {
           onEdit={detailRecipe.custom ? () => setSheet({ kind: 'form', id: detailRecipe.id }) : undefined}
           onDelete={detailRecipe.custom ? () => deleteRecipe(detailRecipe.id) : undefined}
           logs={logsForRecipe(brewLogs, detailRecipe.id)}
-          onLogBrew={(actualSec, beanG) =>
-            setSheet({ kind: 'log', recipeId: detailRecipe.id, logId: null, actualSec, beanG })
-          }
+          onLogBrew={(actualSec) => setSheet({ kind: 'log', recipeId: detailRecipe.id, logId: null, actualSec })}
           onOpenLog={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
           myGrinder={myGrinderProfile}
           calibration={effectiveCalibration}
@@ -336,7 +334,7 @@ export default function App() {
 
       {sheet?.kind === 'log' && logSheetRecipe && (
         <BrewLogForm
-          recipe={sheet.beanG ? { ...logSheetRecipe, beanG: sheet.beanG } : logSheetRecipe}
+          recipe={logSheetRecipe}
           beans={beans}
           actualSec={sheet.actualSec}
           existing={sheet.logId ? brewLogs.find((l) => l.id === sheet.logId) : undefined}

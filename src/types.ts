@@ -18,6 +18,25 @@ export interface GrinderSetting {
   setting: string;
 }
 
+/** 붓는 궤적 (위에서 내려다본 모양) */
+export type PourPattern = 'center' | 'spiral' | 'small-circle' | 'large-circle' | 'fill';
+
+/** 물줄기 굵기 — 곧 유량 */
+export type PourFlow = 'thin' | 'medium' | 'thick';
+
+/**
+ * 한 번 붓는 방식. 모든 필드가 선택이다 — 원본 레시피가 말하지 않은 것은 비워 둔다.
+ * (예: "가는 물줄기"만 적힌 레시피라면 flow 만 있고 pattern 은 없다)
+ */
+export interface PourTechnique {
+  pattern?: PourPattern;
+  flow?: PourFlow;
+  /** 붓는 속도 */
+  pace?: 'slow' | 'fast';
+  /** 붓고 나서 휘젓기(stir) 또는 드리퍼째 돌리기(swirl) */
+  agitation?: 'stir' | 'swirl';
+}
+
 /**
  * 추출 타임라인의 한 단계.
  *
@@ -32,8 +51,10 @@ export interface BrewStep {
   waterG: number | null;
   /** 무엇을 하는지 */
   label: string;
-  /** 물줄기 굵기, 교반 여부 등 기법 힌트 */
+  /** 대기 시간, 누적량 같은 부가 설명. 붓는 방식은 pour 에 둔다. */
   hint?: string;
+  /** 붓는 방식 — 원본 레시피에 있을 때만 */
+  pour?: PourTechnique;
 }
 
 /** 추출이 끝난 뒤의 처리 — 가수, 얼음, 우유 */
@@ -83,6 +104,11 @@ export interface Recipe {
   totalSec: number;
   steps: BrewStep[];
   note?: string;
+  /**
+   * 붓는 방식(pour)을 레시피 메모가 아닌 외부 자료에서 가져왔다면 그 출처.
+   * 앱은 이 문구를 푸어 정보 옆에 그대로 보여준다.
+   */
+  pourSource?: string;
   finishing?: Finishing;
   /** 사용자가 앱에서 직접 추가한 레시피 여부 */
   custom?: boolean;

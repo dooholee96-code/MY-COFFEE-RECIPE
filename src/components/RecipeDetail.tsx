@@ -1,13 +1,14 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { BrewLog, Recipe } from '../types';
-import { cumulativeWater, formatRatio, formatSec, scaleRecipe, servedVolumeG } from '../lib/brew';
+import { cumulativeWater, formatRatio, formatSec, servedVolumeG } from '../lib/brew';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { BrewTimer } from './BrewTimer';
-import { DoseScaler } from './DoseScaler';
 import { roastLabel } from '../lib/labels';
 import { StarRating } from './StarRating';
 import { GrindSetting } from './GrindSetting';
+import { PourGlyph } from './PourGlyph';
+import { describePour } from '../lib/pour';
 import type { Calibration, GrinderProfile } from '../lib/grinders';
 import { TASTE_OPTIONS, averageRating, bestLog } from '../lib/dialIn';
 
@@ -24,7 +25,7 @@ interface Props {
   onDelete: (() => void) | undefined;
   /** 이 레시피로 내린 지난 기록 (최신순) */
   logs: BrewLog[];
-  onLogBrew: (actualSec: number, beanG: number) => void;
+  onLogBrew: (actualSec: number) => void;
   onOpenLog: (log: BrewLog) => void;
   myGrinder: GrinderProfile | undefined;
   calibration: Calibration;
@@ -49,10 +50,7 @@ export function RecipeDetail({
   calibration,
   beanPicker,
 }: Props) {
-  const [dose, setDose] = useState(recipe.beanG);
-  const shown = scaleRecipe(recipe, dose);
-  const cumulative = cumulativeWater(shown.steps);
-  const scaled = dose !== recipe.beanG;
+  const cumulative = cumulativeWater(recipe.steps);
 
   return (
     <Modal open onClose={onClose} label={`${recipe.title} 상세`}>
@@ -70,7 +68,7 @@ export function RecipeDetail({
           <h2 className="mt-1 truncate text-xl leading-tight font-bold text-ink">{recipe.title}</h2>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
             <span className="num text-[13px]">
-              {shown.beanG}g · {shown.waterG}g · {formatRatio(shown)}
+              {recipe.beanG}g · {recipe.waterG}g · {formatRatio(recipe)}
             </span>
             {recipe.author && !recipe.title.includes(recipe.author) && <span>· {recipe.author}</span>}
           </p>
@@ -98,22 +96,21 @@ export function RecipeDetail({
 
       {/* 본문 */}
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-        <BrewTimer recipe={shown} soundOn={soundOn} onLogBrew={(sec) => onLogBrew(sec, shown.beanG)} />
+        <BrewTimer recipe={recipe} soundOn={soundOn} onLogBrew={onLogBrew} />
 
-        <DoseScaler baseBeanG={recipe.beanG} value={dose} onChange={setDose} />
 
         {beanPicker}
 
         {/* 설정값 */}
         <dl className="grid grid-cols-2 gap-2">
           {[
-            { icon: 'thermometer' as const, label: '물 온도', value: `${recipe.tempC}℃`, numeric: true },
-            { icon: 'clock' as const, label: '목표 시간', value: formatSec(recipe.totalSec), numeric: true },
-            { icon: 'filter' as const, label: '추천 기구', value: recipe.gear, numeric: false },
+            { icon: 'thermometer' as const, label: '물 온도', value: `${recipe.tempC}℃`, numeric: true, wide: false },
+            { icon: 'clock' as const, label: '목표 시간', value: formatSec(recipe.totalSec), numeric: true, wide: false },
+            { icon: 'filter' as const, label: '추천 기구', value: recipe.gear, numeric: false, wide: true },
           ].map((cell) => (
             <div
               key={cell.label}
-              className="flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center"
+              className={`flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center ${cell.wide ? 'col-span-2' : ''}`}
             >
               <Icon name={cell.icon} size={16} className="text-ink-faint" />
               <dt className="text-[11px] text-ink-faint">{cell.label}</dt>
@@ -166,10 +163,9 @@ export function RecipeDetail({
           <h4 className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-ink-soft uppercase">
             <Icon name="clock" size={14} className="text-crema" />
             추출 단계
-            {scaled && <span className="font-normal text-crema normal-case">· {dose}g 기준으로 조정됨</span>}
           </h4>
           <ol className="overflow-hidden rounded-xl border border-line">
-            {shown.steps.map((step, i) => (
+            {recipe.steps.map((step, i) => (
               <li
                 key={i}
                 className="flex items-center gap-3 border-b border-line bg-well px-3 py-2.5 last:border-0"
@@ -177,9 +173,17 @@ export function RecipeDetail({
                 <span className="w-12 shrink-0 num text-xs font-semibold text-ink-faint">
                   {step.atSec === null ? '—' : formatSec(step.atSec)}
                 </span>
+                {step.pour && describePour(step.pour) ? (
+                  <PourGlyph pour={step.pour} size={30} animate={false} />
+                ) : (
+                  <span className="w-[30px] shrink-0" aria-hidden="true" />
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="text-sm font-bold text-ink">{step.label}</span>
                   {step.hint && <span className="ml-1.5 text-xs text-ink-faint">{step.hint}</span>}
+                  {describePour(step.pour) && (
+                    <span className="block text-xs font-semibold text-crema-deep">{describePour(step.pour)}</span>
+                  )}
                 </span>
                 <span className="shrink-0 text-right">
                   {step.waterG !== null && step.waterG > 0 ? (
@@ -196,6 +200,12 @@ export function RecipeDetail({
               </li>
             ))}
           </ol>
+          {recipe.pourSource && (
+            <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-ink-faint">
+              <Icon name="info" size={12} className="mt-0.5 shrink-0" />
+              붓는 방식 출처: {recipe.pourSource}
+            </p>
+          )}
         </section>
 
         {/* 마무리 */}
@@ -204,32 +214,32 @@ export function RecipeDetail({
           <dl className="space-y-1.5 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-ink-soft">추출 총 투입량</dt>
-              <dd className="num font-bold text-ink">{shown.waterG}g</dd>
+              <dd className="num font-bold text-ink">{recipe.waterG}g</dd>
             </div>
-            {shown.finishing?.waterG !== undefined && (
+            {recipe.finishing?.waterG !== undefined && (
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">가수</dt>
-                <dd className="num font-bold text-ink">+{shown.finishing.waterG}g</dd>
+                <dd className="num font-bold text-ink">+{recipe.finishing.waterG}g</dd>
               </div>
             )}
-            {shown.finishing?.milkG !== undefined && (
+            {recipe.finishing?.milkG !== undefined && (
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">우유</dt>
-                <dd className="num font-bold text-ink">+{shown.finishing.milkG}g</dd>
+                <dd className="num font-bold text-ink">+{recipe.finishing.milkG}g</dd>
               </div>
             )}
-            {shown.finishing?.iceG !== undefined && (
+            {recipe.finishing?.iceG !== undefined && (
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">얼음 (미리 준비)</dt>
-                <dd className="num font-bold text-ink">{shown.finishing.iceG}g</dd>
+                <dd className="num font-bold text-ink">{recipe.finishing.iceG}g</dd>
               </div>
             )}
             <div className="flex justify-between gap-3 border-t border-line pt-1.5">
               <dt className="font-semibold text-ink-soft">잔에 담기는 양</dt>
-              <dd className="num text-base font-bold text-crema">약 {servedVolumeG(shown)}g</dd>
+              <dd className="num text-base font-bold text-crema">약 {servedVolumeG(recipe)}g</dd>
             </div>
           </dl>
-          {shown.finishing?.note && <p className="pt-1 text-sm text-ink-soft">{shown.finishing.note}</p>}
+          {recipe.finishing?.note && <p className="pt-1 text-sm text-ink-soft">{recipe.finishing.note}</p>}
         </section>
 
         {/* 내 기록 — 레시피를 다시 열었을 때 지난번에 어땠는지 바로 보이게 */}

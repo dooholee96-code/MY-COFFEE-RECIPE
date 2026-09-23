@@ -46,46 +46,6 @@ export function isAutoPlayable(recipe: Pick<Recipe, 'steps'>): boolean {
   return recipe.steps.every((s) => s.atSec !== null);
 }
 
-/**
- * 원두량을 바꿔 레시피 전체를 비례 조정한다.
- *
- * 각 단계를 따로 반올림하면 합이 총량과 어긋나므로, 누적값을 반올림한 뒤 차분해서
- * "합계 = 총량" 을 항상 만족시킨다. 시간과 온도는 조정하지 않는다 — 추출 시간은
- * 원두량이 아니라 분쇄도와 기구가 정하기 때문이다.
- */
-export function scaleRecipe(recipe: Recipe, targetBeanG: number): Recipe {
-  if (targetBeanG <= 0 || recipe.beanG <= 0 || targetBeanG === recipe.beanG) return recipe;
-  const factor = targetBeanG / recipe.beanG;
-
-  const cumulative = cumulativeWater(recipe.steps);
-  let prevScaled = 0;
-  const steps: BrewStep[] = recipe.steps.map((step, i) => {
-    if (step.waterG === null) return step;
-    if (step.waterG === 0) return step;
-    const cum = cumulative[i];
-    if (cum === null || cum === undefined) return step;
-    const scaledCum = Math.round(cum * factor);
-    const waterG = scaledCum - prevScaled;
-    prevScaled = scaledCum;
-    return { ...step, waterG };
-  });
-
-  const scaled: Recipe = {
-    ...recipe,
-    beanG: Math.round(targetBeanG * 10) / 10,
-    waterG: Math.round(recipe.waterG * factor),
-    steps,
-  };
-  if (recipe.finishing) {
-    const f = { ...recipe.finishing };
-    if (f.waterG !== undefined) f.waterG = Math.round(f.waterG * factor);
-    if (f.iceG !== undefined) f.iceG = Math.round(f.iceG * factor);
-    if (f.milkG !== undefined) f.milkG = Math.round(f.milkG * factor);
-    scaled.finishing = f;
-  }
-  return scaled;
-}
-
 /** 레시피 한 잔을 다 마실 때까지 잔에 들어가는 최종 음료량 (가수·우유 포함, 얼음 제외) */
 export function servedVolumeG(recipe: Recipe): number {
   const f = recipe.finishing;

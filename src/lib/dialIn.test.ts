@@ -8,6 +8,7 @@ import {
   suggestAdjustment,
 } from './dialIn';
 import type { BrewLog } from '../types';
+import { findGrinder } from './grinders';
 
 const log = (over: Partial<BrewLog> = {}): BrewLog => ({
   id: 'l1',
@@ -60,6 +61,13 @@ describe('suggestAdjustment', () => {
   it('추출이 많이 빨랐으면 가늘게', () => {
     const a = suggestAdjustment('bitter', { targetSec: 150, actualSec: 90 });
     expect(a.headline).toBe('분쇄도를 가늘게');
+  });
+
+  it('내 그라인더 단위로 말한다 — Femobook A2 면 2클릭', () => {
+    const femobook = findGrinder('femobook-a2');
+    expect(suggestAdjustment('sour', undefined, femobook).headline).toBe('분쇄도를 2클릭 가늘게');
+    expect(suggestAdjustment('bitter', undefined, femobook).headline).toBe('분쇄도를 2클릭 굵게');
+    expect(suggestAdjustment('weak', undefined, femobook).alternatives).toContain('분쇄도를 2클릭 가늘게');
   });
 
   it('시간이 목표 근처면 맛 판정을 따른다', () => {

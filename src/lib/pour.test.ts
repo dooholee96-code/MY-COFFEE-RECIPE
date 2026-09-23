@@ -37,10 +37,12 @@ describe('레시피의 붓는 방식', () => {
     }
   });
 
-  it('484 는 작은 원 → 큰 원', () => {
+  it('484 는 원문대로 80g 을 가운데에 천천히 → 40g 큰 원', () => {
     for (const id of ['484-original-hot', '484-ice']) {
-      const pours = byId(id).steps.map((s) => s.pour?.pattern);
-      expect(pours, id).toEqual([undefined, 'small-circle', 'large-circle']);
+      const r = byId(id);
+      expect(r.steps.map((s) => s.pour?.pattern), id).toEqual([undefined, 'center', 'large-circle']);
+      expect(r.steps[1]?.pour?.pace, id).toBe('slow');
+      expect(r.pourSource, id).toContain('정인성 40 80 40');
     }
   });
 

@@ -31,12 +31,13 @@ describe('filterRecipes', () => {
   it('드리퍼로 가른다', () => {
     const kalita = filterRecipes(seedRecipes, f({ dripper: 'kalita' }), none);
     expect(kalita.every((r) => r.dripperType === 'kalita')).toBe(true);
-    expect(kalita).toHaveLength(4);
+    expect(kalita).toHaveLength(2); // 리이케 핫/아이스 — 484 는 원문대로 V60
   });
 
   it('필터를 겹쳐 쓸 수 있다', () => {
-    const got = filterRecipes(seedRecipes, f({ serve: 'ice', roast: 'dark', dripper: 'kalita' }), none);
-    expect(got.map((r) => r.id)).toEqual(['484-ice', 'liike-cafeole-ice']);
+    const got = filterRecipes(seedRecipes, f({ serve: 'ice', roast: 'dark', dripper: 'v60' }), none);
+    // 범용(any) 배전도 레시피는 다크 필터에도 함께 나온다
+    expect(got.map((r) => r.id)).toEqual(['v60-clean-ice', 'jungins-ice', '484-ice']);
   });
 
   it('제목·작성자·메모·그라인더 세팅을 검색한다', () => {

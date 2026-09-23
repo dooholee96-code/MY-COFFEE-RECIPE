@@ -5,10 +5,10 @@ export const roastLabel = (roast: RoastLevel): string =>
 
 export const roastBadgeClass = (roast: RoastLevel): string =>
   ({
-    light: 'border-orange-800/50 bg-orange-900/30 text-orange-300',
-    medium: 'border-amber-800/50 bg-amber-900/30 text-amber-300',
-    dark: 'border-stone-600 bg-stone-700/50 text-stone-300',
-    any: 'border-teal-800/50 bg-teal-900/30 text-teal-300',
+    light: 'border-roast-light/25 bg-roast-light-soft text-roast-light',
+    medium: 'border-roast-medium/25 bg-roast-medium-soft text-roast-medium',
+    dark: 'border-roast-dark/20 bg-roast-dark-soft text-roast-dark',
+    any: 'border-sage/25 bg-sage-soft text-sage',
   })[roast];
 
 export const dripperLabel = (d: DripperType): string =>

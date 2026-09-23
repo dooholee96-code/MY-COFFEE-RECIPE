@@ -34,4 +34,5 @@ export const KEYS = {
   beans: 'beans',
   grinderCalibration: 'grinderCalibration',
   activeBean: 'activeBean',
+  theme: 'theme',
 } as const;

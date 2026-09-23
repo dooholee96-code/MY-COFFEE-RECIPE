@@ -58,21 +58,21 @@ export function RecipeDetail({
     <Modal open onClose={onClose} label={`${recipe.title} 상세`}>
       {/* 헤더 */}
       <header
-        className={`flex shrink-0 items-start justify-between gap-3 bg-gradient-to-r px-5 py-4 text-white ${
-          recipe.serve === 'hot' ? 'from-amber-700 to-orange-800' : 'from-sky-800 to-slate-800'
+        className={`flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 pt-5 pb-4 ${
+          recipe.serve === 'hot' ? 'bg-hot-soft' : 'bg-ice-soft'
         }`}
       >
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-bold">{recipe.title}</h2>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/80">
-            <span className="rounded bg-black/25 px-1.5 py-0.5 text-[10px] font-bold">{roastLabel(recipe.roast)}</span>
-            <span className="rounded bg-black/25 px-1.5 py-0.5 text-[10px] font-bold">
-              {recipe.serve === 'hot' ? 'HOT' : 'ICE'}
-            </span>
-            <span className="font-mono">
+          {/* 메뉴판의 섹션 머리처럼 — 온도와 배전도 */}
+          <p className={`eyebrow ${recipe.serve === 'hot' ? 'text-hot' : 'text-ice'}`}>
+            {recipe.serve === 'hot' ? 'Hot' : 'Iced'} · {roastLabel(recipe.roast)}
+          </p>
+          <h2 className="mt-1 truncate text-xl leading-tight font-bold text-ink">{recipe.title}</h2>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+            <span className="num text-[13px]">
               {shown.beanG}g · {shown.waterG}g · {formatRatio(shown)}
             </span>
-            {recipe.author && !recipe.title.includes(recipe.author) && <span>{recipe.author}</span>}
+            {recipe.author && !recipe.title.includes(recipe.author) && <span>· {recipe.author}</span>}
           </p>
         </div>
         <div className="flex shrink-0 gap-1">
@@ -81,7 +81,7 @@ export function RecipeDetail({
             onClick={onToggleFavorite}
             aria-pressed={favorite}
             aria-label={`즐겨찾기 ${favorite ? '해제' : '추가'}`}
-            className="rounded-full bg-black/25 p-2 transition hover:bg-black/40"
+            className={`rounded-full bg-card/70 p-2 transition hover:bg-card ${favorite ? 'text-crema' : 'text-ink-soft'}`}
           >
             <Icon name="star" size={18} filled={favorite} />
           </button>
@@ -89,7 +89,7 @@ export function RecipeDetail({
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="rounded-full bg-black/25 p-2 transition hover:bg-black/40"
+            className="rounded-full bg-card/70 p-2 text-ink-soft transition hover:bg-card"
           >
             <Icon name="close" size={18} />
           </button>
@@ -107,23 +107,31 @@ export function RecipeDetail({
         {/* 설정값 */}
         <dl className="grid grid-cols-2 gap-2">
           {[
-            { icon: 'thermometer' as const, label: '물 온도', value: `${recipe.tempC}℃` },
-            { icon: 'clock' as const, label: '목표 시간', value: formatSec(recipe.totalSec) },
-            { icon: 'filter' as const, label: '추천 기구', value: recipe.gear },
+            { icon: 'thermometer' as const, label: '물 온도', value: `${recipe.tempC}℃`, numeric: true },
+            { icon: 'clock' as const, label: '목표 시간', value: formatSec(recipe.totalSec), numeric: true },
+            { icon: 'filter' as const, label: '추천 기구', value: recipe.gear, numeric: false },
           ].map((cell) => (
             <div
               key={cell.label}
-              className="flex flex-col items-center gap-1 rounded-xl border border-stone-700 bg-stone-900/60 p-3 text-center"
+              className="flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center"
             >
-              <Icon name={cell.icon} size={16} className="text-stone-500" />
-              <dt className="text-[11px] text-stone-500">{cell.label}</dt>
-              <dd className="text-[13px] leading-tight font-bold whitespace-pre-line text-stone-200">{cell.value}</dd>
+              <Icon name={cell.icon} size={16} className="text-ink-faint" />
+              <dt className="text-[11px] text-ink-faint">{cell.label}</dt>
+              <dd
+                className={
+                  cell.numeric
+                    ? 'num text-lg leading-tight font-semibold text-ink'
+                    : 'text-[13px] leading-tight font-bold whitespace-pre-line text-ink'
+                }
+              >
+                {cell.value}
+              </dd>
             </div>
           ))}
-          <div className="col-span-2 flex flex-col items-center gap-1 rounded-xl border border-stone-700 bg-stone-900/60 p-3 text-center">
-            <Icon name="grinder" size={16} className="text-stone-500" />
-            <dt className="text-[11px] text-stone-500">분쇄도</dt>
-            <dd className="text-[13px] leading-tight font-bold text-stone-200">
+          <div className="col-span-2 flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center">
+            <Icon name="grinder" size={16} className="text-ink-faint" />
+            <dt className="text-[11px] text-ink-faint">분쇄도</dt>
+            <dd className="text-[13px] leading-tight font-bold text-ink">
               <GrindSetting
                 settings={recipe.grinderSettings ?? []}
                 myGrinder={myGrinder}
@@ -132,7 +140,7 @@ export function RecipeDetail({
               />
             </dd>
             {myGrinder && myGrinder.id !== 'comandante' && (
-              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
+              <p className="mt-0.5 text-[10px] leading-snug text-ink-faint">
                 환산값은 출발점입니다. 맛을 보고 보정하세요 — 설정에서 기준을 바꿀 수 있습니다.
               </p>
             )}
@@ -140,14 +148,14 @@ export function RecipeDetail({
         </dl>
 
         {recipe.note && (
-          <p className="flex items-start gap-2 rounded-xl border border-amber-900/50 bg-amber-950/30 px-4 py-3 text-sm leading-relaxed text-amber-200">
-            <span className="shrink-0 font-bold text-amber-500">Check!</span>
+          <p className="flex items-start gap-2 rounded-xl border border-crema/25 bg-crema-soft px-4 py-3 text-sm leading-relaxed text-ink">
+            <span className="shrink-0 font-bold text-crema">Check!</span>
             {recipe.note}
           </p>
         )}
 
         {recipe.waterNote && (
-          <p className="flex items-start gap-1.5 text-xs text-stone-500">
+          <p className="flex items-start gap-1.5 text-xs text-ink-faint">
             <Icon name="info" size={13} className="mt-0.5 shrink-0" />
             {recipe.waterNote}
           </p>
@@ -155,34 +163,34 @@ export function RecipeDetail({
 
         {/* 단계표 — 타이머와 같은 데이터를 훑어볼 수 있게 */}
         <section>
-          <h4 className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-stone-400 uppercase">
-            <Icon name="clock" size={14} className="text-amber-500" />
+          <h4 className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-ink-soft uppercase">
+            <Icon name="clock" size={14} className="text-crema" />
             추출 단계
-            {scaled && <span className="font-normal text-amber-500 normal-case">· {dose}g 기준으로 조정됨</span>}
+            {scaled && <span className="font-normal text-crema normal-case">· {dose}g 기준으로 조정됨</span>}
           </h4>
-          <ol className="overflow-hidden rounded-xl border border-stone-700">
+          <ol className="overflow-hidden rounded-xl border border-line">
             {shown.steps.map((step, i) => (
               <li
                 key={i}
-                className="flex items-center gap-3 border-b border-stone-700 bg-stone-900/40 px-3 py-2.5 last:border-0"
+                className="flex items-center gap-3 border-b border-line bg-well px-3 py-2.5 last:border-0"
               >
-                <span className="w-12 shrink-0 font-mono text-xs font-semibold text-stone-500">
+                <span className="w-12 shrink-0 num text-xs font-semibold text-ink-faint">
                   {step.atSec === null ? '—' : formatSec(step.atSec)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="text-sm font-bold text-stone-100">{step.label}</span>
-                  {step.hint && <span className="ml-1.5 text-xs text-stone-500">{step.hint}</span>}
+                  <span className="text-sm font-bold text-ink">{step.label}</span>
+                  {step.hint && <span className="ml-1.5 text-xs text-ink-faint">{step.hint}</span>}
                 </span>
                 <span className="shrink-0 text-right">
                   {step.waterG !== null && step.waterG > 0 ? (
                     <>
-                      <span className="font-mono text-sm font-bold text-amber-400">+{step.waterG}g</span>
-                      <span className="ml-1.5 font-mono text-[11px] text-stone-500">
+                      <span className="num text-sm font-bold text-crema">+{step.waterG}g</span>
+                      <span className="ml-1.5 num text-[11px] text-ink-faint">
                         {cumulative[i] === null ? '' : `→ ${cumulative[i]}g`}
                       </span>
                     </>
                   ) : (
-                    <span className="font-mono text-xs text-stone-600">{step.waterG === null ? '눈대중' : '—'}</span>
+                    <span className="num text-xs text-ink-faint">{step.waterG === null ? '눈대중' : '—'}</span>
                   )}
                 </span>
               </li>
@@ -191,37 +199,37 @@ export function RecipeDetail({
         </section>
 
         {/* 마무리 */}
-        <section className="space-y-2 rounded-xl border border-dashed border-stone-700 p-4">
-          <h4 className="text-xs font-bold tracking-wider text-stone-400 uppercase">마무리</h4>
+        <section className="space-y-2 rounded-xl border border-dashed border-line p-4">
+          <h4 className="text-xs font-bold tracking-wider text-ink-soft uppercase">마무리</h4>
           <dl className="space-y-1.5 text-sm">
             <div className="flex justify-between gap-3">
-              <dt className="text-stone-400">추출 총 투입량</dt>
-              <dd className="font-mono font-bold text-stone-100">{shown.waterG}g</dd>
+              <dt className="text-ink-soft">추출 총 투입량</dt>
+              <dd className="num font-bold text-ink">{shown.waterG}g</dd>
             </div>
             {shown.finishing?.waterG !== undefined && (
               <div className="flex justify-between gap-3">
-                <dt className="text-stone-400">가수</dt>
-                <dd className="font-mono font-bold text-stone-100">+{shown.finishing.waterG}g</dd>
+                <dt className="text-ink-soft">가수</dt>
+                <dd className="num font-bold text-ink">+{shown.finishing.waterG}g</dd>
               </div>
             )}
             {shown.finishing?.milkG !== undefined && (
               <div className="flex justify-between gap-3">
-                <dt className="text-stone-400">우유</dt>
-                <dd className="font-mono font-bold text-stone-100">+{shown.finishing.milkG}g</dd>
+                <dt className="text-ink-soft">우유</dt>
+                <dd className="num font-bold text-ink">+{shown.finishing.milkG}g</dd>
               </div>
             )}
             {shown.finishing?.iceG !== undefined && (
               <div className="flex justify-between gap-3">
-                <dt className="text-stone-400">얼음 (미리 준비)</dt>
-                <dd className="font-mono font-bold text-stone-100">{shown.finishing.iceG}g</dd>
+                <dt className="text-ink-soft">얼음 (미리 준비)</dt>
+                <dd className="num font-bold text-ink">{shown.finishing.iceG}g</dd>
               </div>
             )}
-            <div className="flex justify-between gap-3 border-t border-stone-700 pt-1.5">
-              <dt className="font-semibold text-stone-300">잔에 담기는 양</dt>
-              <dd className="font-mono text-base font-bold text-amber-400">약 {servedVolumeG(shown)}g</dd>
+            <div className="flex justify-between gap-3 border-t border-line pt-1.5">
+              <dt className="font-semibold text-ink-soft">잔에 담기는 양</dt>
+              <dd className="num text-base font-bold text-crema">약 {servedVolumeG(shown)}g</dd>
             </div>
           </dl>
-          {shown.finishing?.note && <p className="pt-1 text-sm text-stone-400">{shown.finishing.note}</p>}
+          {shown.finishing?.note && <p className="pt-1 text-sm text-ink-soft">{shown.finishing.note}</p>}
         </section>
 
         {/* 내 기록 — 레시피를 다시 열었을 때 지난번에 어땠는지 바로 보이게 */}
@@ -233,7 +241,7 @@ export function RecipeDetail({
             <button
               type="button"
               onClick={() => onSwitchTo(sibling.id)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-600 bg-stone-700 py-3 font-bold text-stone-200 transition hover:bg-stone-600"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-well py-3 font-bold text-ink transition hover:bg-line"
             >
               <Icon name="swap" size={18} />
               {sibling.serve === 'hot' ? 'HOT' : 'ICE'} 버전 보기
@@ -245,13 +253,13 @@ export function RecipeDetail({
               href={recipe.youtubeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600/90 py-3 font-bold text-white transition hover:bg-red-600"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-card py-3 font-bold text-ink transition hover:bg-well"
             >
-              <Icon name="youtube" size={18} />
+              <Icon name="youtube" size={18} className="text-hot" />
               유튜브 원본 영상 보기
             </a>
           ) : (
-            <p className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-700 bg-stone-700/40 py-3 text-sm font-bold text-stone-500">
+            <p className="flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-well py-3 text-sm font-bold text-ink-faint">
               <Icon name="youtube" size={18} />
               유튜브 정보 없음
             </p>
@@ -263,7 +271,7 @@ export function RecipeDetail({
                 <button
                   type="button"
                   onClick={onEdit}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-stone-600 bg-stone-700 py-3 font-bold text-stone-200 transition hover:bg-stone-600"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line-strong bg-well py-3 font-bold text-ink transition hover:bg-line"
                 >
                   <Icon name="edit" size={16} />
                   수정
@@ -273,7 +281,7 @@ export function RecipeDetail({
                 <button
                   type="button"
                   onClick={onDelete}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 font-bold text-red-300 transition hover:bg-red-900/40"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 font-bold text-danger transition hover:bg-danger-soft"
                 >
                   <Icon name="trash" size={16} />
                   삭제
@@ -295,12 +303,12 @@ function PastBrews({ logs, onOpenLog }: { logs: BrewLog[]; onOpenLog: (log: Brew
   return (
     <section>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h4 className="flex items-center gap-2 text-xs font-bold tracking-wider text-stone-400 uppercase">
-          <Icon name="clock" size={14} className="text-amber-500" />
+        <h4 className="flex items-center gap-2 text-xs font-bold tracking-wider text-ink-soft uppercase">
+          <Icon name="clock" size={14} className="text-crema" />
           내 기록 {logs.length}회
         </h4>
         {avg !== null && (
-          <span className="flex items-center gap-1.5 text-xs text-stone-500">
+          <span className="flex items-center gap-1.5 text-xs text-ink-faint">
             평균
             <StarRating value={Math.round(avg)} size={12} />
             {avg.toFixed(1)}
@@ -309,9 +317,9 @@ function PastBrews({ logs, onOpenLog }: { logs: BrewLog[]; onOpenLog: (log: Brew
       </div>
 
       {best && (
-        <p className="mb-2 rounded-xl border border-emerald-900/50 bg-emerald-950/25 px-3 py-2 text-xs text-emerald-200/90">
-          <span className="font-bold text-emerald-400">가장 잘 나온 설정</span>{' '}
-          <span className="font-mono">
+        <p className="mb-2 rounded-xl border border-sage/25 bg-sage-soft px-3 py-2 text-xs text-ink">
+          <span className="font-bold text-sage">가장 잘 나온 설정</span>{' '}
+          <span className="num">
             {best.beanG}g · {best.waterG}g · {best.tempC}℃
             {best.grindNote ? ` · ${best.grindNote}` : ''}
             {best.actualSec !== undefined ? ` · ${formatSec(best.actualSec)}` : ''}
@@ -325,20 +333,20 @@ function PastBrews({ logs, onOpenLog }: { logs: BrewLog[]; onOpenLog: (log: Brew
             <button
               type="button"
               onClick={() => onOpenLog(log)}
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-stone-700 bg-stone-900/40 px-3 py-2 text-left transition hover:border-stone-600"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-well px-3 py-2 text-left transition hover:border-line-strong"
             >
               <span className="min-w-0">
-                <span className="block text-xs font-semibold text-stone-300">
+                <span className="block text-xs font-semibold text-ink-soft">
                   {new Date(log.brewedAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
                 </span>
-                <span className="block truncate font-mono text-[11px] text-stone-500">
+                <span className="block truncate num text-[11px] text-ink-faint">
                   {log.beanG}g · {log.waterG}g
                   {log.actualSec !== undefined ? ` · ${formatSec(log.actualSec)}` : ''}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 {log.taste && (
-                  <span className="text-[10px] font-bold text-stone-500">
+                  <span className="text-[10px] font-bold text-ink-faint">
                     {TASTE_OPTIONS.find((t) => t.id === log.taste)?.label}
                   </span>
                 )}

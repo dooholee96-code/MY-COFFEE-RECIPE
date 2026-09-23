@@ -66,14 +66,14 @@ export function Modal({ open, onClose, label, children }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-scrim backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="animate-sheet relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-stone-700 bg-stone-800 shadow-2xl outline-none sm:max-w-lg sm:rounded-3xl"
+        className="animate-sheet relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-line bg-card shadow-2xl outline-none sm:max-w-lg sm:rounded-3xl"
       >
         {children}
       </div>

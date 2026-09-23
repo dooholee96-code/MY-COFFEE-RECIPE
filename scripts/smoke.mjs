@@ -18,7 +18,7 @@ const step = async (name, fn) => {
 
 await step('앱이 렌더링된다', async () => {
   const t = await page.textContent('h1');
-  if (!t.includes('MY COFFEE RECIPE')) throw new Error(`제목: ${t}`);
+  if (!/my coffee recipe/i.test(t)) throw new Error(`제목: ${t}`);
 });
 
 await step('17개 레시피가 보인다', async () => {
@@ -60,10 +60,10 @@ await step('타이머가 돌고 단계가 넘어간다', async () => {
   const d = page.locator('[role=dialog]');
   await d.getByRole('button', { name: '시작' }).click();
   await d.getByRole('button', { name: '일시정지' }).waitFor();
-  const clock = d.locator('.font-mono.text-4xl').first();
+  const clock = d.getByRole('timer');
   const t0 = await clock.textContent();
   await page.waitForFunction(
-    (prev) => document.querySelector('[role=dialog] .font-mono.text-4xl')?.textContent !== prev,
+    (prev) => document.querySelector('[role=dialog] [role=timer]')?.textContent !== prev,
     t0, { timeout: 4000 },
   );
   const t1 = await clock.textContent();

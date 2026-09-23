@@ -111,18 +111,18 @@ export function BrewLogForm({
   };
 
   const field =
-    'w-full rounded-lg border border-stone-600 bg-stone-900 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-amber-600 focus:outline-none';
-  const labelCls = 'block text-xs font-semibold text-stone-400';
+    'w-full rounded-lg border border-line-strong bg-well px-3 py-2 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none';
+  const labelCls = 'block text-xs font-semibold text-ink-soft';
   const activeBeans = beans.filter((b) => !b.finished || b.id === beanId);
 
   return (
     <Modal open onClose={onClose} label="추출 기록">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-700 bg-stone-800 px-5 py-4">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-bold text-stone-100">{existing ? '기록 수정' : '추출 기록'}</h2>
-          <p className="truncate text-xs text-stone-500">{recipe.title}</p>
+          <h2 className="truncate text-lg font-bold text-ink">{existing ? '기록 수정' : '추출 기록'}</h2>
+          <p className="truncate text-xs text-ink-faint">{recipe.title}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="닫기" className="shrink-0 rounded-full bg-stone-700 p-2 text-stone-300 hover:bg-stone-600">
+        <button type="button" onClick={onClose} aria-label="닫기" className="shrink-0 rounded-full bg-well p-2 text-ink-soft hover:bg-line">
           <Icon name="close" size={18} />
         </button>
       </header>
@@ -130,7 +130,7 @@ export function BrewLogForm({
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
         {/* 맛 — 가장 먼저 묻는다. 나머지는 대부분 자동으로 채워져 있다. */}
         <section>
-          <h3 className="text-xs font-bold tracking-wider text-stone-400 uppercase">어땠나요?</h3>
+          <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">어땠나요?</h3>
           <div className="mt-2 grid grid-cols-5 gap-1.5">
             {TASTE_OPTIONS.map((opt) => (
               <button
@@ -140,32 +140,32 @@ export function BrewLogForm({
                 onClick={() => setTaste(taste === opt.id ? undefined : opt.id)}
                 className={`rounded-lg border px-1 py-2.5 text-xs font-bold transition ${
                   taste === opt.id
-                    ? 'border-transparent bg-amber-600 text-white'
-                    : 'border-stone-700 bg-stone-900/50 text-stone-400 hover:bg-stone-700'
+                    ? 'border-transparent bg-crema text-on-crema'
+                    : 'border-line bg-well text-ink-soft hover:bg-well'
                 }`}
               >
                 {opt.label}
               </button>
             ))}
           </div>
-          {taste && <p className="mt-1.5 text-[11px] text-stone-500">{TASTE_OPTIONS.find((o) => o.id === taste)?.hint}</p>}
+          {taste && <p className="mt-1.5 text-[11px] text-ink-faint">{TASTE_OPTIONS.find((o) => o.id === taste)?.hint}</p>}
         </section>
 
         {/* 조정 제안 — 기록하는 그 자리에서 다음 행동을 준다 */}
         {advice && (
-          <section className="rounded-xl border border-amber-800/50 bg-amber-950/30 p-4">
-            <h3 className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-600 uppercase">
+          <section className="rounded-xl border border-crema/25 bg-crema-soft p-4">
+            <h3 className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-crema uppercase">
               <Icon name="info" size={13} />
               다음엔 이것 하나만
             </h3>
-            <p className="mt-1.5 text-base font-bold text-amber-300">{advice.headline}</p>
-            <p className="mt-1 text-sm leading-relaxed text-amber-200/80">{advice.reason}</p>
+            <p className="mt-1.5 text-base font-bold text-crema-deep">{advice.headline}</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">{advice.reason}</p>
             {advice.alternatives.length > 0 && (
               <details className="mt-2">
-                <summary className="cursor-pointer text-xs font-semibold text-amber-500/80 hover:text-amber-400">
+                <summary className="cursor-pointer text-xs font-semibold text-crema hover:text-crema">
                   그래도 안 되면
                 </summary>
-                <ul className="mt-1.5 space-y-1 pl-4 text-xs text-amber-200/70">
+                <ul className="mt-1.5 space-y-1 pl-4 text-xs text-ink-soft">
                   {advice.alternatives.map((alt) => (
                     <li key={alt} className="list-disc">{alt}</li>
                   ))}
@@ -176,7 +176,7 @@ export function BrewLogForm({
         )}
 
         <section>
-          <h3 className="text-xs font-bold tracking-wider text-stone-400 uppercase">별점</h3>
+          <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">별점</h3>
           <div className="mt-2">
             <StarRating value={rating} onChange={setRating} size={26} />
           </div>
@@ -184,7 +184,7 @@ export function BrewLogForm({
 
         {/* 실제로 쓴 값 — 레시피 값으로 미리 채워 두고 다른 점만 고치게 한다 */}
         <section className="space-y-3">
-          <h3 className="text-xs font-bold tracking-wider text-stone-400 uppercase">실제로 쓴 값</h3>
+          <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">실제로 쓴 값</h3>
 
           <div>
             <label className={labelCls} htmlFor="bl-bean">원두</label>
@@ -200,7 +200,7 @@ export function BrewLogForm({
                 );
               })}
             </select>
-            {beans.length === 0 && <p className="mt-1 text-[11px] text-stone-500">원두 탭에서 원두를 등록하면 여기서 고를 수 있습니다.</p>}
+            {beans.length === 0 && <p className="mt-1 text-[11px] text-ink-faint">원두 탭에서 원두를 등록하면 여기서 고를 수 있습니다.</p>}
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -226,7 +226,7 @@ export function BrewLogForm({
           <div>
             <label className={labelCls} htmlFor="bl-sec">
               실제 걸린 시간 (초)
-              {parsedElapsed ? <span className="ml-1.5 font-mono text-stone-500">{formatSec(parsedElapsed)} · 목표 {formatSec(recipe.totalSec)}</span> : null}
+              {parsedElapsed ? <span className="ml-1.5 num text-ink-faint">{formatSec(parsedElapsed)} · 목표 {formatSec(recipe.totalSec)}</span> : null}
             </label>
             <input id="bl-sec" className={`${field} mt-1`} inputMode="numeric" value={elapsed} onChange={(e) => setElapsed(e.target.value)} placeholder={String(recipe.totalSec)} />
           </div>
@@ -238,11 +238,11 @@ export function BrewLogForm({
         </section>
       </div>
 
-      <footer className="flex shrink-0 gap-2 border-t border-stone-700 bg-stone-800 p-4">
-        <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-stone-600 bg-stone-700 py-3 font-bold text-stone-300 hover:bg-stone-600">
+      <footer className="flex shrink-0 gap-2 border-t border-line bg-card p-4">
+        <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line-strong bg-well py-3 font-bold text-ink-soft hover:bg-line">
           취소
         </button>
-        <button type="button" onClick={submit} className="flex-[2] rounded-xl bg-amber-600 py-3 font-bold text-white hover:bg-amber-500">
+        <button type="button" onClick={submit} className="flex-[2] rounded-xl bg-crema py-3 font-bold text-on-crema hover:bg-crema-deep">
           저장
         </button>
       </footer>

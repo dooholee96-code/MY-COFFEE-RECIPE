@@ -27,14 +27,14 @@ export function ActiveBeanPicker({ beans, activeBeanId, onChange, myGrinder, fal
   const days = daysOffRoast(active?.roastedOn);
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-stone-700 bg-stone-800 px-3 py-2">
-      <Icon name="scale" size={15} className="shrink-0 text-amber-500" />
+    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2">
+      <Icon name="scale" size={15} className="shrink-0 text-crema" />
       <label className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase">지금 쓰는 원두</span>
+        <span className="block text-[10px] font-bold tracking-wider text-ink-faint uppercase">지금 쓰는 원두</span>
         <select
           value={active?.id ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="w-full truncate bg-transparent text-sm font-semibold text-stone-100 outline-none"
+          className="w-full truncate bg-transparent text-sm font-semibold text-ink outline-none"
         >
           <option value="">선택 안 함</option>
           {open.map((b) => (
@@ -46,11 +46,11 @@ export function ActiveBeanPicker({ beans, activeBeanId, onChange, myGrinder, fal
       </label>
       {myGrinder && (
         <span className="shrink-0 text-right">
-          <span className="block font-mono text-sm font-bold text-stone-100">
+          <span className="block num text-sm font-bold text-ink">
             {anchor ?? fallbackAnchor ?? '—'}
-            <span className="ml-0.5 text-[10px] text-stone-500">클릭</span>
+            <span className="ml-0.5 text-[10px] text-ink-faint">클릭</span>
           </span>
-          <span className="block text-[10px] text-stone-500">
+          <span className="block text-[10px] text-ink-faint">
             {anchor !== null ? '이 원두 기준' : active ? '원두 기준 없음' : 'V60 기준'}
             {days !== null && ` · ${days}일차`}
           </span>

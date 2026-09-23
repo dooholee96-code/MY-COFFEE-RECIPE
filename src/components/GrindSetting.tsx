@@ -31,14 +31,14 @@ export function GrindSetting({ settings, myGrinder, calibration, compact = false
 
       return (
         <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
-          <span className="font-semibold text-stone-200">
+          <span className="font-semibold text-ink">
             {myGrinder.name} {converted.text}
           </span>
-          <span className="text-[11px] text-stone-500">
+          <span className="text-[11px] text-ink-faint">
             ≈ {s.grinder} {s.setting}
           </span>
           {converted.outOfRange && !compact && (
-            <span className="rounded border border-amber-900/60 bg-amber-950/40 px-1 text-[10px] font-bold text-amber-500">
+            <span className="rounded border border-crema/25 bg-crema-soft px-1 text-[10px] font-bold text-crema">
               범위 밖
             </span>
           )}

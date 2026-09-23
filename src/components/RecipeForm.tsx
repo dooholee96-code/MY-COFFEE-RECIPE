@@ -139,14 +139,14 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
     onSave(recipe);
   };
 
-  const field = 'w-full rounded-lg border border-stone-600 bg-stone-900 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-amber-600 focus:outline-none';
-  const labelCls = 'block text-xs font-semibold text-stone-400';
+  const field = 'w-full rounded-lg border border-line-strong bg-well px-3 py-2 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none';
+  const labelCls = 'block text-xs font-semibold text-ink-soft';
 
   return (
     <Modal open onClose={onClose} label={initial ? '레시피 수정' : '레시피 추가'}>
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-700 bg-stone-800 px-5 py-4">
-        <h2 className="text-lg font-bold text-stone-100">{initial ? '레시피 수정' : '레시피 추가'}</h2>
-        <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full bg-stone-700 p-2 text-stone-300 hover:bg-stone-600">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-5 py-4">
+        <h2 className="text-lg font-bold text-ink">{initial ? '레시피 수정' : '레시피 추가'}</h2>
+        <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full bg-well p-2 text-ink-soft hover:bg-line">
           <Icon name="close" size={18} />
         </button>
       </header>
@@ -223,7 +223,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         <div>
           <label className={labelCls} htmlFor="rf-grinder">그라인더 세팅</label>
           <input id="rf-grinder" className={`${field} mt-1`} value={grinderText} onChange={(e) => setGrinderText(e.target.value)} placeholder="코만단테 26~27 / EK43 13~14" />
-          <p className="mt-1 text-[11px] text-stone-500">여러 그라인더는 / 로 구분합니다.</p>
+          <p className="mt-1 text-[11px] text-ink-faint">여러 그라인더는 / 로 구분합니다.</p>
         </div>
         <div>
           <label className={labelCls} htmlFor="rf-gear">추천 기구</label>
@@ -237,19 +237,19 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         {/* 단계 */}
         <section>
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold tracking-wider text-stone-400 uppercase">추출 단계 *</h3>
-            <span className="font-mono text-xs text-stone-500">총 {waterG}g</span>
+            <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">추출 단계 *</h3>
+            <span className="num text-xs text-ink-faint">총 {waterG}g</span>
           </div>
           <div className="mt-2 space-y-2">
             {steps.map((s, i) => (
-              <div key={i} className="rounded-xl border border-stone-700 bg-stone-900/50 p-3">
+              <div key={i} className="rounded-xl border border-line bg-well p-3">
                 <div className="flex items-center gap-2">
-                  <input aria-label={`${i + 1}단계 분`} className="w-12 rounded-md border border-stone-600 bg-stone-900 px-2 py-1.5 text-center font-mono text-sm text-stone-100 focus:border-amber-600 focus:outline-none" inputMode="numeric" value={s.min} onChange={(e) => setStep(i, { min: e.target.value })} placeholder="분" />
-                  <span className="text-stone-600">:</span>
-                  <input aria-label={`${i + 1}단계 초`} className="w-12 rounded-md border border-stone-600 bg-stone-900 px-2 py-1.5 text-center font-mono text-sm text-stone-100 focus:border-amber-600 focus:outline-none" inputMode="numeric" value={s.sec} onChange={(e) => setStep(i, { sec: e.target.value })} placeholder="초" />
-                  <input aria-label={`${i + 1}단계 물 양`} className="w-16 rounded-md border border-stone-600 bg-stone-900 px-2 py-1.5 text-center font-mono text-sm text-stone-100 focus:border-amber-600 focus:outline-none" inputMode="numeric" value={s.waterG} onChange={(e) => setStep(i, { waterG: e.target.value })} placeholder="g" />
-                  <input aria-label={`${i + 1}단계 동작`} className="min-w-0 flex-1 rounded-md border border-stone-600 bg-stone-900 px-2 py-1.5 text-sm text-stone-100 focus:border-amber-600 focus:outline-none" value={s.label} onChange={(e) => setStep(i, { label: e.target.value })} placeholder="동작 (예: 뜸 들이기)" />
-                  <button type="button" onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))} aria-label={`${i + 1}단계 삭제`} disabled={steps.length === 1} className="shrink-0 rounded-md p-1.5 text-stone-500 hover:text-red-400 disabled:opacity-30">
+                  <input aria-label={`${i + 1}단계 분`} className="w-12 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.min} onChange={(e) => setStep(i, { min: e.target.value })} placeholder="분" />
+                  <span className="text-ink-faint">:</span>
+                  <input aria-label={`${i + 1}단계 초`} className="w-12 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.sec} onChange={(e) => setStep(i, { sec: e.target.value })} placeholder="초" />
+                  <input aria-label={`${i + 1}단계 물 양`} className="w-16 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.waterG} onChange={(e) => setStep(i, { waterG: e.target.value })} placeholder="g" />
+                  <input aria-label={`${i + 1}단계 동작`} className="min-w-0 flex-1 rounded-md border border-line-strong bg-well px-2 py-1.5 text-sm text-ink focus:border-crema focus:outline-none" value={s.label} onChange={(e) => setStep(i, { label: e.target.value })} placeholder="동작 (예: 뜸 들이기)" />
+                  <button type="button" onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))} aria-label={`${i + 1}단계 삭제`} disabled={steps.length === 1} className="shrink-0 rounded-md p-1.5 text-ink-faint hover:text-danger disabled:opacity-30">
                     <Icon name="trash" size={15} />
                   </button>
                 </div>
@@ -257,11 +257,11 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => setSteps((p) => [...p, emptyStep()])} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-stone-600 py-2.5 text-sm font-semibold text-stone-400 hover:border-amber-700 hover:text-amber-500">
+          <button type="button" onClick={() => setSteps((p) => [...p, emptyStep()])} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-ink-soft hover:border-crema hover:text-crema">
             <Icon name="plus" size={16} />
             단계 추가
           </button>
-          <p className="mt-2 text-[11px] text-stone-500">시간을 비우면 시계로 자동 진행하지 않는 단계가 됩니다. 물 양을 비우면 &quot;눈대중&quot;으로 표시됩니다.</p>
+          <p className="mt-2 text-[11px] text-ink-faint">시간을 비우면 시계로 자동 진행하지 않는 단계가 됩니다. 물 양을 비우면 &quot;눈대중&quot;으로 표시됩니다.</p>
         </section>
 
         <div>
@@ -280,17 +280,17 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         </div>
 
         {error && (
-          <p role="alert" className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-300">
+          <p role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">
             {error}
           </p>
         )}
       </div>
 
-      <footer className="flex shrink-0 gap-2 border-t border-stone-700 bg-stone-800 p-4">
-        <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-stone-600 bg-stone-700 py-3 font-bold text-stone-300 hover:bg-stone-600">
+      <footer className="flex shrink-0 gap-2 border-t border-line bg-card p-4">
+        <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line-strong bg-well py-3 font-bold text-ink-soft hover:bg-line">
           취소
         </button>
-        <button type="button" onClick={submit} className="flex-[2] rounded-xl bg-amber-600 py-3 font-bold text-white hover:bg-amber-500">
+        <button type="button" onClick={submit} className="flex-[2] rounded-xl bg-crema py-3 font-bold text-on-crema hover:bg-crema-deep">
           저장
         </button>
       </footer>

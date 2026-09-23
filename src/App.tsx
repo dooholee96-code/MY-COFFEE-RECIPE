@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Bean, BrewLog, Category, Filters, Recipe } from './types';
 import { seedRecipes } from './data/recipes';
 import { defaultFilters, filterRecipes, hasActiveFilters } from './lib/filter';
@@ -17,6 +17,8 @@ import { LogsView } from './components/LogsView';
 import { logsForRecipe } from './lib/dialIn';
 import { type Calibration, calibrationForBean, findGrinder } from './lib/grinders';
 import { ActiveBeanPicker } from './components/ActiveBeanPicker';
+import { PourOverArt } from './components/PourOverArt';
+import { type ThemePref, applyTheme } from './lib/theme';
 
 type Sheet =
   | { kind: 'detail'; id: string }
@@ -48,6 +50,8 @@ export default function App() {
   const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
 
   const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
+  const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, 'auto');
+  useEffect(() => applyTheme(theme), [theme]);
 
   /** 설정에 저장된 그라인더 id 를 프로필로 */
   const myGrinderProfile = useMemo(() => findGrinder(myGrinder), [myGrinder]);
@@ -128,29 +132,32 @@ export default function App() {
 
   return (
     <div className="min-h-screen pb-24">
-      <header className="sticky top-0 z-20 border-b border-stone-800 bg-stone-900/90 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
-          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <span className="rounded-lg bg-gradient-to-br from-amber-600 to-orange-800 p-2 text-white">
-              <Icon name="coffee" size={20} />
+          <div className="flex min-w-0 shrink-0 items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-ink text-canvas ring-4 ring-ink/10">
+              <Icon name="coffee" size={19} />
             </span>
-            <h1 className="truncate text-lg font-bold tracking-tight text-stone-100">MY COFFEE RECIPE</h1>
+            <div className="leading-none">
+              <p className="eyebrow text-[9.5px]">Home Brew Bar</p>
+              <h1 className="mt-1 font-display text-[21px] font-semibold tracking-tight text-ink">My Coffee Recipe</h1>
+            </div>
           </div>
           <button
             type="button"
             onClick={() => setSheet({ kind: 'settings' })}
             aria-label={`설정${myGrinderProfile ? ` (${myGrinderProfile.name})` : ''}`}
-            className="flex max-w-[38%] min-w-0 items-center gap-1.5 rounded-full border border-stone-700 bg-stone-800 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:bg-stone-700"
+            title={myGrinderProfile ? `설정 · ${myGrinderProfile.name}` : '설정'}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-card text-ink-soft shadow-card transition hover:text-ink"
           >
-            <Icon name="grinder" size={14} className="shrink-0" />
-            <span className="truncate">{myGrinderProfile?.name ?? '설정'}</span>
+            <Icon name="grinder" size={18} />
           </button>
         </div>
       </header>
 
       {/* 최상위 화면 전환 */}
       <div className="mx-auto max-w-4xl px-5 pt-4">
-        <nav aria-label="화면" className="flex gap-1 rounded-xl border border-stone-700 bg-stone-800 p-1">
+        <nav aria-label="화면" className="flex gap-1 rounded-xl border border-line bg-card p-1">
           {VIEWS.map((v) => (
             <button
               key={v.id}
@@ -158,15 +165,15 @@ export default function App() {
               aria-current={view === v.id ? 'page' : undefined}
               onClick={() => setView(v.id)}
               className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
-                view === v.id ? 'bg-amber-700 text-white' : 'text-stone-400 hover:bg-stone-700 hover:text-stone-200'
+                view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:bg-well hover:text-ink'
               }`}
             >
               {v.label}
               {v.id === 'logs' && brewLogs.length > 0 && (
-                <span className="ml-1.5 font-mono text-[11px] opacity-70">{brewLogs.length}</span>
+                <span className="ml-1.5 num text-[11px] opacity-70">{brewLogs.length}</span>
               )}
               {v.id === 'beans' && beans.filter((b) => !b.finished).length > 0 && (
-                <span className="ml-1.5 font-mono text-[11px] opacity-70">{beans.filter((b) => !b.finished).length}</span>
+                <span className="ml-1.5 num text-[11px] opacity-70">{beans.filter((b) => !b.finished).length}</span>
               )}
             </button>
           ))}
@@ -218,12 +225,12 @@ export default function App() {
                 onClick={() => openCategory(cat.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold whitespace-nowrap transition ${
                   filters.category === cat.id
-                    ? 'border-transparent bg-amber-700 text-white'
-                    : 'border-stone-700 bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-stone-200'
+                    ? 'border-transparent bg-ink text-canvas'
+                    : 'border-line bg-card text-ink-soft hover:bg-well hover:text-ink'
                 }`}
               >
                 {cat.label}
-                <span className={`font-mono text-[11px] ${filters.category === cat.id ? 'text-white/70' : 'text-stone-600'}`}>
+                <span className={`num text-[11px] ${filters.category === cat.id ? 'text-canvas/70' : 'text-ink-faint'}`}>
                   {count}
                 </span>
               </button>
@@ -243,10 +250,13 @@ export default function App() {
           />
         </div>
 
-        <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-stone-800 pb-2">
-          <h2 className="text-xl font-bold text-stone-100">레시피</h2>
-          <p className="mb-0.5 text-sm text-stone-400">
-            <span className="font-mono font-bold text-stone-200">{visible.length}</span>개
+        <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-line pb-2">
+          <div>
+            <p className="eyebrow">Today&apos;s Menu</p>
+            <h2 className="mt-0.5 text-xl font-bold text-ink">레시피</h2>
+          </div>
+          <p className="mb-0.5 text-sm text-ink-soft">
+            <span className="num font-bold text-ink">{visible.length}</span>개
           </p>
         </div>
 
@@ -279,7 +289,7 @@ export default function App() {
         type="button"
         hidden={view !== 'recipes'}
         onClick={() => setSheet({ kind: 'form', id: null })}
-        className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-amber-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-black/40 transition hover:bg-amber-500"
+        className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-crema px-5 py-3.5 font-bold text-on-crema shadow-float transition hover:bg-crema-deep"
       >
         <Icon name="plus" size={18} />
         레시피 추가
@@ -347,6 +357,8 @@ export default function App() {
           onCalibrationChange={setCalibration}
           soundOn={soundOn}
           onSoundChange={setSoundOn}
+          theme={theme}
+          onThemeChange={setTheme}
           customRecipes={customRecipes}
           brewLogs={brewLogs}
           beans={beans}
@@ -371,26 +383,26 @@ function EmptyState({
   const label = CATEGORIES.find((c) => c.id === category)?.label ?? category;
 
   return (
-    <div className="rounded-2xl border border-dashed border-stone-700 px-6 py-14 text-center">
-      <Icon name="coffee" size={32} className="mx-auto text-stone-700" />
+    <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
+      <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
       {filtered ? (
         <>
-          <p className="mt-3 font-semibold text-stone-300">조건에 맞는 레시피가 없습니다.</p>
-          <button type="button" onClick={onResetFilters} className="mt-3 text-sm font-semibold text-amber-500 hover:underline">
+          <p className="mt-3 font-semibold text-ink-soft">조건에 맞는 레시피가 없습니다.</p>
+          <button type="button" onClick={onResetFilters} className="mt-3 text-sm font-semibold text-crema hover:underline">
             필터 초기화
           </button>
         </>
       ) : (
         <>
-          <p className="mt-3 font-semibold text-stone-300">{label} 레시피가 아직 없습니다.</p>
-          <p className="mx-auto mt-1.5 max-w-sm text-sm text-stone-500">
+          <p className="mt-3 font-semibold text-ink-soft">{label} 레시피가 아직 없습니다.</p>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
             직접 쓰는 레시피를 추가하면 여기에 쌓이고, 브라우저에 저장됩니다. 설정에서 JSON 으로 내보내
             저장소의 기본 레시피로 옮겨 심을 수도 있습니다.
           </p>
           <button
             type="button"
             onClick={onAdd}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-500"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-crema px-4 py-2.5 text-sm font-bold text-on-crema hover:bg-crema-deep"
           >
             <Icon name="plus" size={16} />
             {label} 레시피 추가

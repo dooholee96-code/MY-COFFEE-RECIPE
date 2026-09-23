@@ -22,7 +22,7 @@ function Segmented<T extends string>({
 }) {
   return (
     <fieldset>
-      <legend className="mb-1.5 text-[11px] font-bold tracking-wider text-stone-500 uppercase">{legend}</legend>
+      <legend className="mb-1.5 text-[11px] font-bold tracking-wider text-ink-faint uppercase">{legend}</legend>
       <div className="flex gap-1.5">
         {options.map((opt) => (
           <button
@@ -32,8 +32,8 @@ function Segmented<T extends string>({
             onClick={() => onSelect(opt.id)}
             className={`flex-1 rounded-lg border py-2 text-xs font-bold transition md:text-sm ${
               value === opt.id
-                ? 'border-transparent bg-amber-600 text-white'
-                : 'border-stone-700 bg-stone-900/50 text-stone-400 hover:bg-stone-700 hover:text-stone-200'
+                ? 'border-transparent bg-crema text-on-crema'
+                : 'border-line bg-well text-ink-soft hover:bg-well hover:text-ink'
             }`}
           >
             {opt.label}
@@ -72,7 +72,7 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
           <Icon
             name="search"
             size={16}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-stone-500"
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint"
           />
           <input
             type="search"
@@ -80,7 +80,7 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
             onChange={(e) => onChange({ query: e.target.value })}
             placeholder="레시피, 작성자, 그라인더 세팅"
             aria-label="레시피 검색"
-            className="w-full rounded-xl border border-stone-700 bg-stone-800 py-2.5 pr-3 pl-9 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-600 focus:outline-none"
+            className="w-full rounded-xl border border-line bg-card py-2.5 pr-3 pl-9 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none"
           />
         </div>
 
@@ -91,8 +91,8 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
           onClick={() => onChange({ favoritesOnly: !filters.favoritesOnly })}
           className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${
             filters.favoritesOnly
-              ? 'border-transparent bg-amber-600 text-white'
-              : 'border-stone-700 bg-stone-800 text-stone-400 hover:bg-stone-700'
+              ? 'border-transparent bg-crema text-on-crema'
+              : 'border-line bg-card text-ink-soft hover:bg-well'
           }`}
         >
           <Icon name="star" size={16} filled={filters.favoritesOnly} />
@@ -106,8 +106,8 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
           aria-controls="filter-panel"
           className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${
             open || active.length
-              ? 'border-amber-700 bg-stone-800 text-amber-400'
-              : 'border-stone-700 bg-stone-800 text-stone-400 hover:bg-stone-700'
+              ? 'border-crema bg-card text-crema'
+              : 'border-line bg-card text-ink-soft hover:bg-well'
           }`}
         >
           <Icon name="filter" size={15} />
@@ -124,7 +124,7 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
               key={chip.label}
               type="button"
               onClick={() => onChange(chip.clear)}
-              className="flex items-center gap-1 rounded-full border border-amber-800/60 bg-amber-950/40 py-1 pr-2 pl-2.5 text-xs font-bold text-amber-300 hover:bg-amber-900/40"
+              className="flex items-center gap-1 rounded-full border border-crema/25 bg-crema-soft py-1 pr-2 pl-2.5 text-xs font-bold text-crema-deep hover:bg-crema-soft"
             >
               {chip.label}
               <Icon name="close" size={12} />
@@ -134,7 +134,7 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
       )}
 
       {open && (
-        <div id="filter-panel" className="space-y-3 rounded-xl border border-stone-700 bg-stone-800 p-3">
+        <div id="filter-panel" className="space-y-3 rounded-xl border border-line bg-card p-3">
           {filters.category === 'drip' && (
             <Segmented
               legend="Dripper"

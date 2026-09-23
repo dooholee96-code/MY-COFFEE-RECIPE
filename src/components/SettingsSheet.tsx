@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { type Calibration, GRINDERS, findGrinder } from '../lib/grinders';
 import { THEME_OPTIONS, type ThemePref } from '../lib/theme';
+import type { PourMotionPref } from '../hooks/usePourMotion';
 
 interface Props {
   onClose: () => void;
@@ -15,6 +16,8 @@ interface Props {
   onSoundChange: (on: boolean) => void;
   theme: ThemePref;
   onThemeChange: (t: ThemePref) => void;
+  pourMotion: PourMotionPref;
+  onPourMotionChange: (p: PourMotionPref) => void;
   customRecipes: Recipe[];
   brewLogs: BrewLog[];
   beans: Bean[];
@@ -39,6 +42,8 @@ export function SettingsSheet({
   onSoundChange,
   theme,
   onThemeChange,
+  pourMotion,
+  onPourMotionChange,
   customRecipes,
   brewLogs,
   beans,
@@ -223,6 +228,27 @@ export function SettingsSheet({
               </button>
             ))}
           </div>
+        </section>
+
+        <section>
+          <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">푸어 애니메이션</h3>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={pourMotion === 'always'}
+            onClick={() => onPourMotionChange(pourMotion === 'always' ? 'auto' : 'always')}
+            className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-well px-4 py-3 text-left text-sm font-semibold text-ink hover:bg-well"
+          >
+            <span>
+              항상 움직이기
+              <span className="mt-0.5 block text-xs font-normal text-ink-faint">
+                끄면 기기의 &lsquo;동작 줄이기&rsquo;가 켜져 있을 때 멈춘 그림으로 보여줍니다.
+              </span>
+            </span>
+            <span className={`h-6 w-11 shrink-0 rounded-full p-0.5 transition ${pourMotion === 'always' ? 'bg-crema' : 'bg-line-strong'}`}>
+              <span className={`block h-5 w-5 rounded-full bg-card shadow-sm transition ${pourMotion === 'always' ? 'translate-x-5' : ''}`} />
+            </span>
+          </button>
         </section>
 
         <section>

@@ -19,6 +19,7 @@ import { type Calibration, calibrationForBean, findGrinder } from './lib/grinder
 import { ActiveBeanPicker } from './components/ActiveBeanPicker';
 import { PourOverArt } from './components/PourOverArt';
 import { type ThemePref, applyTheme } from './lib/theme';
+import { type PourMotionPref, PourMotionContext } from './hooks/usePourMotion';
 
 type Sheet =
   | { kind: 'detail'; id: string }
@@ -51,6 +52,7 @@ export default function App() {
 
   const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
   const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, 'auto');
+  const [pourMotion, setPourMotion] = usePersistentState<PourMotionPref>(KEYS.pourMotion, 'auto');
   useEffect(() => applyTheme(theme), [theme]);
 
   /** 설정에 저장된 그라인더 id 를 프로필로 */
@@ -131,6 +133,7 @@ export default function App() {
       : undefined;
 
   return (
+    <PourMotionContext.Provider value={pourMotion}>
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
@@ -357,6 +360,8 @@ export default function App() {
           onSoundChange={setSoundOn}
           theme={theme}
           onThemeChange={setTheme}
+          pourMotion={pourMotion}
+          onPourMotionChange={setPourMotion}
           customRecipes={customRecipes}
           brewLogs={brewLogs}
           beans={beans}
@@ -364,6 +369,7 @@ export default function App() {
         />
       )}
     </div>
+    </PourMotionContext.Provider>
   );
 }
 

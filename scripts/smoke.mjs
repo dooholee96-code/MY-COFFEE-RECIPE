@@ -58,11 +58,26 @@ await step('카스야 4:6 은 나선 푸어가 움직이는 그림으로 나온�
   const live = d.locator('[aria-live=polite] svg[role=img][aria-label="나선"]');
   await live.waitFor();
   if ((await live.locator('animateMotion').count()) !== 1) throw new Error('나선 그림이 움직이지 않는다');
-  // 단계 표 — 다섯 푸어 모두 정지 그림
+  // 단계 표 — 다섯 푸어 모두 열자마자 움직인다
   const table = d.locator('ol svg[role=img][aria-label="나선"]');
   if ((await table.count()) !== 5) throw new Error(`단계 표 그림 ${await table.count()}개`);
-  if ((await table.locator('animate, animateMotion').count()) !== 0) throw new Error('단계 표 그림이 움직인다');
+  if ((await table.locator('animateMotion').count()) !== 5) throw new Error('단계 표 그림이 움직이지 않는다');
   await d.getByText('붓는 방식 출처').waitFor();
+  await page.keyboard.press('Escape');
+});
+
+await step('484 는 타이머를 켜기 전에도 푸어가 움직이고, 뜸 동안 다음 푸어를 미리 보여준다', async () => {
+  await page.getByRole('button', { name: '484 오리지널', exact: true }).click();
+  const d = page.locator('[role=dialog]');
+  // 단계 표: 센터 푸어 · 천천히 → 큰 원
+  const center = d.locator('ol svg[role=img][aria-label="센터 푸어 · 천천히"]');
+  await center.waitFor();
+  if ((await center.locator('animate').count()) === 0) throw new Error('센터 푸어 물결이 움직이지 않는다');
+  if ((await d.locator('ol svg[role=img][aria-label="큰 원"] animateMotion').count()) !== 1) throw new Error('큰 원이 돌지 않는다');
+  // 타이머 카드는 뜸 단계 — 다음 푸어(1차)를 미리 재생
+  const card = d.locator('[aria-live=polite]');
+  await card.getByText('다음 푸어').waitFor();
+  if ((await card.locator('svg[aria-label="센터 푸어 · 천천히"] animate').count()) === 0) throw new Error('미리보기가 움직이지 않는다');
   await page.keyboard.press('Escape');
 });
 
@@ -243,6 +258,28 @@ await step('원두를 고르면 그 원두의 기준으로 분쇄도가 바뀐�
   await page.locator('main select').first().selectOption('');
   body = await page.textContent('main');
   if (!body.includes('Femobook A2 46~49.5')) throw new Error(`원두 해제 후 복귀 안 됨: ${body.slice(0, 300)}`);
+});
+
+await step("기기의 '동작 줄이기'면 멈추고, 설정의 '항상 움직이기'로 다시 움직인다", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const p2 = await ctx.newPage();
+  await p2.goto(`file://${process.cwd()}/dist-single/index.html`);
+  const count = async () => {
+    await p2.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
+    const n = await p2.locator('[role=dialog] ol svg[role=img] animateMotion').count();
+    await p2.keyboard.press('Escape');
+    await p2.waitForSelector('[role=dialog]', { state: 'detached' });
+    return n;
+  };
+  const before = await count();
+  if (before !== 0) throw new Error(`동작 줄이기인데 ${before}개가 움직인다`);
+  await p2.getByRole('button', { name: /^설정/ }).click();
+  await p2.getByRole('switch', { name: /항상 움직이기/ }).click();
+  await p2.keyboard.press('Escape');
+  await p2.waitForSelector('[role=dialog]', { state: 'detached' });
+  const after = await count();
+  if (after !== 5) throw new Error(`항상 움직이기인데 ${after}개`);
+  await ctx.close();
 });
 
 await step('콘솔 에러가 없다', async () => {

@@ -40,9 +40,10 @@ export function hasPourInfo(steps: BrewStep[]): boolean {
  * 굵은 물줄기는 같은 양을 더 빨리 붓는다는 뜻이라 조금 빠르게 둔다.
  */
 export function pourCycleSec(pour: PourTechnique | undefined): number {
+  // 한눈에 구분되도록 간격을 넓게 둔다 — 천천히는 보통의 1.7배, 빠르게는 절반 정도
   let sec = 3;
-  if (pour?.pace === 'fast') sec = 1.8;
-  else if (pour?.pace === 'slow') sec = 4.5;
+  if (pour?.pace === 'fast') sec = 1.4;
+  else if (pour?.pace === 'slow') sec = 5;
   if (pour?.flow === 'thick' && pour.pace !== 'slow') sec *= 0.85;
   return Math.round(sec * 100) / 100;
 }

@@ -26,6 +26,9 @@ describe('pourCycleSec', () => {
     expect(pourCycleSec({ pace: 'fast' })).toBeLessThan(pourCycleSec({}));
     expect(pourCycleSec({ pace: 'slow' })).toBeGreaterThan(pourCycleSec({}));
   });
+  it('천천히와 빠르게는 눈으로 구분될 만큼 차이 난다 (3배 이상)', () => {
+    expect(pourCycleSec({ pace: 'slow' }) / pourCycleSec({ pace: 'fast' })).toBeGreaterThanOrEqual(3);
+  });
 });
 
 describe('레시피의 붓는 방식', () => {

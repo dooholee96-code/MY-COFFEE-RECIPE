@@ -35,4 +35,5 @@ export const KEYS = {
   grinderCalibration: 'grinderCalibration',
   activeBean: 'activeBean',
   theme: 'theme',
+  pourMotion: 'pourMotion',
 } as const;

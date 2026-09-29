@@ -138,9 +138,15 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
                 </p>
               )}
             </div>
-            {step.pour && describePour(step.pour) && (
-              <PourGlyph key={current} pour={step.pour} size={76} />
-            )}
+            {step.pour && describePour(step.pour) ? (
+              <PourGlyph key={current} pour={step.pour} size={88} />
+            ) : next?.pour && describePour(next.pour) ? (
+              // 뜸처럼 붓는 방법이 없는 단계에서는 다음 푸어의 동작을 미리 보여준다
+              <figure className="flex shrink-0 flex-col items-center opacity-70">
+                <PourGlyph key={`next-${current}`} pour={next.pour} size={64} />
+                <figcaption className="mt-0.5 text-[10px] font-bold text-ink-faint">다음 푸어</figcaption>
+              </figure>
+            ) : null}
           </div>
         ) : null}
       </div>

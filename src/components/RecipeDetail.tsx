@@ -174,9 +174,9 @@ export function RecipeDetail({
                   {step.atSec === null ? '—' : formatSec(step.atSec)}
                 </span>
                 {step.pour && describePour(step.pour) ? (
-                  <PourGlyph pour={step.pour} size={30} animate={false} />
+                  <PourGlyph pour={step.pour} size={44} />
                 ) : (
-                  <span className="w-[30px] shrink-0" aria-hidden="true" />
+                  <span className="w-11 shrink-0" aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="text-sm font-bold text-ink">{step.label}</span>

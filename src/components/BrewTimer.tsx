@@ -58,6 +58,27 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
   const progress = Math.min(100, (elapsed / recipe.totalSec) * 100);
   const secondsToNext = next?.atSec !== null && next?.atSec !== undefined ? Math.max(0, Math.ceil(next.atSec - elapsed)) : null;
 
+  /**
+   * 붓는 방법 애니메이션에 무엇을 보여줄지.
+   * 지금 단계에 붓는 방법이 있으면 그것을, 없으면(뜸 등) 다음 단계의 것을 "몇 차부터 이렇게"라고 밝혀서 보여준다.
+   */
+  const stage = (() => {
+    if (step?.pour && describePour(step.pour)) {
+      return { key: `now-${current}`, pour: step.pour, heading: '지금 이렇게 부어요', sub: '', upcoming: false };
+    }
+    if (next?.pour && describePour(next.pour)) {
+      const at = next.atSec !== null ? ` (${formatSec(next.atSec)})` : '';
+      return {
+        key: `next-${current}`,
+        pour: next.pour,
+        heading: `${next.label}${at}부터 이렇게 부어요`,
+        sub: secondsToNext !== null ? `${secondsToNext}초 후 시작` : '',
+        upcoming: true,
+      };
+    }
+    return null;
+  })();
+
   const onStart = () => {
     unlockAudio();
     start();
@@ -117,37 +138,31 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
             </button>
           </div>
         ) : step ? (
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-lg font-bold text-ink">
-                {step.label}
-                {step.waterG !== null && step.waterG > 0 && (
-                  <span className="ml-2 num text-crema">+{step.waterG}g</span>
-                )}
+          <>
+            <p className="text-lg font-bold text-ink">
+              {step.label}
+              {step.waterG !== null && step.waterG > 0 && <span className="ml-2 num text-crema">+{step.waterG}g</span>}
+            </p>
+            {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
+            {auto && next && (
+              <p className="mt-1 text-xs text-ink-faint">
+                다음: {next.label}
+                {secondsToNext !== null && ` · ${secondsToNext}초 후`}
               </p>
-              {/* 붓는 방식 — 주전자를 든 채 읽어야 하므로 굵게 */}
-              {describePour(step.pour) && (
-                <p className="mt-0.5 text-sm font-bold text-crema-deep">{describePour(step.pour)}</p>
-              )}
-              {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
-              {auto && next && (
-                <p className="mt-1 text-xs text-ink-faint">
-                  다음: {next.label}
-                  {describePour(next.pour) && ` (${describePour(next.pour)})`}
-                  {secondsToNext !== null && ` · ${secondsToNext}초 후`}
-                </p>
-              )}
-            </div>
-            {step.pour && describePour(step.pour) ? (
-              <PourGlyph key={current} pour={step.pour} size={88} />
-            ) : next?.pour && describePour(next.pour) ? (
-              // 뜸처럼 붓는 방법이 없는 단계에서는 다음 푸어의 동작을 미리 보여준다
-              <figure className="flex shrink-0 flex-col items-center opacity-70">
-                <PourGlyph key={`next-${current}`} pour={next.pour} size={64} />
-                <figcaption className="mt-0.5 text-[10px] font-bold text-ink-faint">다음 푸어</figcaption>
-              </figure>
-            ) : null}
-          </div>
+            )}
+            {stage && (
+              // 붓는 방법 — 카드 폭을 다 써서 크게. 지금 단계의 것인지, 다가올 단계의 것인지 글로 분명히 적는다
+              <div className="mt-3 flex items-center gap-4 border-t border-line pt-3">
+                <PourGlyph key={stage.key} pour={stage.pour} size={132} />
+                {/* 한글이 음절 중간에서 끊기지 않게 어절 단위로 줄바꿈 */}
+                <div className="min-w-0 break-keep">
+                  <p className={`text-xs font-bold ${stage.upcoming ? 'text-ink-faint' : 'text-crema'}`}>{stage.heading}</p>
+                  <p className="mt-1 text-lg leading-snug font-bold text-crema-deep">{describePour(stage.pour)}</p>
+                  {stage.sub && <p className="mt-1 text-xs text-ink-faint">{stage.sub}</p>}
+                </div>
+              </div>
+            )}
+          </>
         ) : null}
       </div>
 

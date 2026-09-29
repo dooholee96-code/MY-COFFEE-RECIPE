@@ -66,7 +66,7 @@ await step('카스야 4:6 은 나선 푸어가 움직이는 그림으로 나온�
   await page.keyboard.press('Escape');
 });
 
-await step('484 는 타이머를 켜기 전에도 푸어가 움직이고, 뜸 동안 다음 푸어를 미리 보여준다', async () => {
+await step('484 는 타이머를 켜기 전에도 푸어가 움직이고, 뜸 동안 1차 붓는 법을 크게 미리 보여준다', async () => {
   await page.getByRole('button', { name: '484 오리지널', exact: true }).click();
   const d = page.locator('[role=dialog]');
   // 단계 표: 센터 푸어 · 천천히 → 큰 원
@@ -74,9 +74,11 @@ await step('484 는 타이머를 켜기 전에도 푸어가 움직이고, 뜸 �
   await center.waitFor();
   if ((await center.locator('animate').count()) === 0) throw new Error('센터 푸어 물결이 움직이지 않는다');
   if ((await d.locator('ol svg[role=img][aria-label="큰 원"] animateMotion').count()) !== 1) throw new Error('큰 원이 돌지 않는다');
-  // 타이머 카드는 뜸 단계 — 다음 푸어(1차)를 미리 재생
+  // 타이머 카드는 뜸 단계 — 1차 붓는 법을 어느 단계 것인지 밝혀서 크게 미리 재생
   const card = d.locator('[aria-live=polite]');
-  await card.getByText('다음 푸어').waitFor();
+  await card.getByText('1차 (1:00)부터 이렇게 부어요').waitFor();
+  const big = await card.locator('svg[role=img]').first().getAttribute('width');
+  if (Number(big) < 120) throw new Error(`타이머 카드 애니메이션이 작다: ${big}px`);
   if ((await card.locator('svg[aria-label="센터 푸어 · 천천히"] animate').count()) === 0) throw new Error('미리보기가 움직이지 않는다');
   await page.keyboard.press('Escape');
 });

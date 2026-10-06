@@ -17,11 +17,45 @@ export function readJSON<T>(key: string, fallback: T): T {
   }
 }
 
-export function writeJSON(key: string, value: unknown): void {
+/** 저장이 실패했을 때 window 에 쏘는 이벤트 이름. App 이 받아 배너를 띄운다. */
+export const STORAGE_ERROR_EVENT = 'mcr:storage-error';
+
+/**
+ * 저장. 실패하면 false 를 돌려주고 이벤트를 쏜다.
+ * 기록·원두는 사용자 데이터라서, 저장이 안 됐는데 된 것처럼 보이면 안 된다
+ * (용량 초과, 시크릿 모드, 사이트 데이터 차단).
+ */
+export function writeJSON(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    return true;
   } catch {
-    // 저장 실패는 조용히 넘긴다 — 기능이 아니라 편의이므로
+    try {
+      window.dispatchEvent(new CustomEvent(STORAGE_ERROR_EVENT, { detail: { key } }));
+    } catch {
+      /* 이벤트조차 못 쏘는 환경이면 할 수 있는 게 없다 */
+    }
+    return false;
+  }
+}
+
+/** 저장된 키 전부 (백업·초기화용) */
+export function allKeys(): string[] {
+  try {
+    return Object.keys(localStorage).filter((k) => k.startsWith(PREFIX));
+  } catch {
+    return [];
+  }
+}
+
+/** 이 앱의 저장 데이터를 전부 지운다. 오류 화면의 "초기화" 에서만 쓴다. */
+export function clearAll(): void {
+  for (const k of allKeys()) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* 무시 */
+    }
   }
 }
 

@@ -7,6 +7,7 @@ import {
   formatSec,
   isAutoPlayable,
   servedVolumeG,
+  sortSteps,
   targetWaterAt,
 } from './brew';
 import { seedRecipes } from '../data/recipes';
@@ -95,5 +96,24 @@ describe('타이머 조회', () => {
     expect(targetWaterAt(steps, 0)).toBe(40);
     expect(targetWaterAt(steps, 45)).toBe(100);
     expect(targetWaterAt(steps, 80)).toBe(160);
+  });
+});
+
+describe('sortSteps', () => {
+  it('시각순으로 정렬하고 시각 없는 단계는 뒤로', () => {
+    const got = sortSteps([
+      { atSec: 70, waterG: 60, label: '2차' },
+      { atSec: null, waterG: null, label: '반복' },
+      { atSec: 0, waterG: 40, label: '뜸' },
+      { atSec: 40, waterG: 60, label: '1차' },
+    ]);
+    expect(got.map((s) => s.label)).toEqual(['뜸', '1차', '2차', '반복']);
+  });
+  it('같은 시각이면 적은 순서를 지킨다', () => {
+    const got = sortSteps([
+      { atSec: 0, waterG: 30, label: '붓기' },
+      { atSec: 0, waterG: 0, label: '교반' },
+    ]);
+    expect(got.map((s) => s.label)).toEqual(['붓기', '교반']);
   });
 });

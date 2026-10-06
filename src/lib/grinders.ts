@@ -256,3 +256,21 @@ export function oneStepLabel(grinder: GrinderProfile | undefined): string {
   }
   return `${Math.max(1, Math.round(raw))}${unit}`;
 }
+
+/**
+ * 폼에 적은 "코만단테 26~27 / EK43 13~14" 를 구조로.
+ *
+ * 각 조각에서 **숫자로 시작하는 첫 어절** 앞까지가 그라인더 이름, 그 뒤가 세팅이다.
+ * 마지막 공백에서 자르면 "코만단테 30 (아주 굵게)" 가 "코만단테 30 (아주" / "굵게)" 로 깨지고,
+ * 첫 숫자에서 자르면 "EK43 (1~11) 9.0" 이 "EK" / "43 …" 으로 깨진다 — 어절 단위라야 둘 다 맞는다.
+ */
+export function parseGrinderText(text: string): GrinderSetting[] {
+  return text
+    .split('/')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk) => {
+      const m = /^(.*?)\s+(\d.*)$/.exec(chunk);
+      return m ? { grinder: m[1]!.trim(), setting: m[2]!.trim() } : { grinder: chunk, setting: '' };
+    });
+}

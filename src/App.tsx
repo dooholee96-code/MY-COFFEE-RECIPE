@@ -2,7 +2,27 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Bean, BrewLog, Category, Filters, Recipe } from './types';
 import { seedRecipes } from './data/recipes';
 import { defaultFilters, filterRecipes, hasActiveFilters } from './lib/filter';
-import { KEYS } from './lib/storage';
+import { KEYS, STORAGE_ERROR_EVENT } from './lib/storage';
+import { useServiceWorkerUpdate } from './hooks/useServiceWorkerUpdate';
+import { isBean, isBrewLog, isRecipe, sanitizeList } from './lib/validate';
+
+/** 저장 데이터 중 모양이 깨져 걸러낸 항목 수. 0 이 아니면 배너로 알린다 */
+let droppedOnLoad = 0;
+const keepRecipes = (raw: unknown): Recipe[] => {
+  const r = sanitizeList(raw, isRecipe);
+  droppedOnLoad += r.dropped;
+  return r.items;
+};
+const keepLogs = (raw: unknown): BrewLog[] => {
+  const r = sanitizeList(raw, isBrewLog);
+  droppedOnLoad += r.dropped;
+  return r.items;
+};
+const keepBeans = (raw: unknown): Bean[] => {
+  const r = sanitizeList(raw, isBean);
+  droppedOnLoad += r.dropped;
+  return r.items;
+};
 import { usePersistentState } from './hooks/usePersistentState';
 import { CATEGORIES } from './lib/labels';
 import { Icon } from './components/Icon';
@@ -25,7 +45,14 @@ type Sheet =
   | { kind: 'detail'; id: string }
   | { kind: 'form'; id: string | null }
   | { kind: 'settings' }
-  | { kind: 'log'; recipeId: string; logId: string | null; actualSec?: number }
+  | {
+      kind: 'log';
+      recipeId: string;
+      logId: string | null;
+      actualSec?: number;
+      /** 닫았을 때 돌아갈 곳. 기록 탭에서 열었으면 레시피 상세를 띄우지 않는다 */
+      returnTo: 'detail' | 'none';
+    }
   | null;
 
 /** 최상위 화면 */
@@ -43,17 +70,28 @@ export default function App() {
   const [sheet, setSheet] = useState<Sheet>(null);
 
   const [favoriteIds, setFavoriteIds] = usePersistentState<string[]>(KEYS.favorites, []);
-  const [customRecipes, setCustomRecipes] = usePersistentState<Recipe[]>(KEYS.customRecipes, []);
+  const [customRecipes, setCustomRecipes] = usePersistentState<Recipe[]>(KEYS.customRecipes, [], keepRecipes);
   const [myGrinder, setMyGrinder] = usePersistentState<string | null>(KEYS.myGrinder, 'femobook-a2');
   const [soundOn, setSoundOn] = usePersistentState<boolean>(KEYS.soundOn, true);
-  const [brewLogs, setBrewLogs] = usePersistentState<BrewLog[]>(KEYS.brewLogs, []);
-  const [beans, setBeans] = usePersistentState<Bean[]>(KEYS.beans, []);
+  const [brewLogs, setBrewLogs] = usePersistentState<BrewLog[]>(KEYS.brewLogs, [], keepLogs);
+  const [beans, setBeans] = usePersistentState<Bean[]>(KEYS.beans, [], keepBeans);
+  // 첫 렌더에서 걸러낸 수를 고정해 둔다 (이후 저장은 앱이 만든 값이라 깨질 일이 없다)
+  const [dropped] = useState(() => droppedOnLoad);
   const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
 
   const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
   const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, 'auto');
   const [pourMotion, setPourMotion] = usePersistentState<PourMotionPref>(KEYS.pourMotion, 'auto');
   useEffect(() => applyTheme(theme), [theme]);
+
+  // 저장 실패(용량 초과·시크릿 모드)는 조용히 넘기지 않는다 — 기록이 남은 줄 알았는데 없으면 안 되므로
+  const [storageFailed, setStorageFailed] = useState(false);
+  useEffect(() => {
+    const onError = () => setStorageFailed(true);
+    window.addEventListener(STORAGE_ERROR_EVENT, onError);
+    return () => window.removeEventListener(STORAGE_ERROR_EVENT, onError);
+  }, []);
+  const swUpdated = useServiceWorkerUpdate();
 
   /** 설정에 저장된 그라인더 id 를 프로필로 */
   const myGrinderProfile = useMemo(() => findGrinder(myGrinder), [myGrinder]);
@@ -91,6 +129,8 @@ export default function App() {
   };
 
   const deleteRecipe = (id: string) => {
+    const title = allRecipes.find((r) => r.id === id)?.title ?? '이 레시피';
+    if (!window.confirm(`'${title}' 레시피를 지울까요? 이 레시피로 남긴 기록은 그대로 남습니다.`)) return;
     setCustomRecipes((prev) => prev.filter((r) => r.id !== id));
     setFavoriteIds((prev) => prev.filter((x) => x !== id));
     setSheet(null);
@@ -125,7 +165,33 @@ export default function App() {
   };
 
   const detailRecipe = sheet?.kind === 'detail' ? allRecipes.find((r) => r.id === sheet.id) : undefined;
-  const logSheetRecipe = sheet?.kind === 'log' ? allRecipes.find((r) => r.id === sheet.recipeId) : undefined;
+  /**
+   * 기록 폼이 기대는 레시피. 레시피가 지워졌어도 기록은 남고 고칠 수 있어야 하므로,
+   * 없으면 기록에 복사돼 있던 값으로 껍데기를 만든다.
+   */
+  const logSheetRecipe = (() => {
+    if (sheet?.kind !== 'log') return undefined;
+    const found = allRecipes.find((r) => r.id === sheet.recipeId);
+    if (found) return found;
+    const log = sheet.logId ? brewLogs.find((l) => l.id === sheet.logId) : undefined;
+    if (!log) return undefined;
+    const stub: Recipe = {
+      id: log.recipeId,
+      title: `${log.recipeTitle} (지워진 레시피)`,
+      category: 'drip',
+      serve: 'hot',
+      roast: 'any',
+      beanG: log.beanG,
+      waterG: log.waterG,
+      tempC: log.tempC,
+      grind: '—',
+      gear: '—',
+      totalSec: log.actualSec ?? 0,
+      steps: [],
+    };
+    return stub;
+  })();
+  const logReturnsToDetail = sheet?.kind === 'log' && sheet.returnTo === 'detail' && allRecipes.some((r) => r.id === sheet.recipeId);
   const editingRecipe = sheet?.kind === 'form' && sheet.id ? allRecipes.find((r) => r.id === sheet.id) : undefined;
   const sibling =
     detailRecipe?.family !== undefined
@@ -157,6 +223,37 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {storageFailed && (
+        <div role="alert" className="mx-auto max-w-4xl px-5 pt-4">
+          <p className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">
+            저장이 되지 않습니다. 시크릿 모드이거나 저장 공간이 찼을 수 있습니다 — 기록과 설정이 이 화면을 닫으면
+            사라집니다. 설정 → 백업에서 내보내 두세요.
+          </p>
+        </div>
+      )}
+      {dropped > 0 && (
+        <div role="alert" className="mx-auto max-w-4xl px-5 pt-4">
+          <p className="rounded-xl border border-crema/25 bg-crema-soft px-4 py-3 text-sm text-ink">
+            저장된 항목 {dropped}개의 모양이 맞지 않아 건너뛰었습니다. 손으로 고친 백업 파일을 불러왔다면 그 항목을
+            확인해 주세요. 다음 저장 때 목록에서 빠집니다.
+          </p>
+        </div>
+      )}
+      {swUpdated && (
+        <div className="mx-auto max-w-4xl px-5 pt-4">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-sage/25 bg-sage-soft px-4 py-2.5 text-sm">
+            <span className="font-semibold text-ink">새 버전이 준비됐습니다.</span>
+            <button
+              type="button"
+              onClick={() => location.reload()}
+              className="shrink-0 rounded-lg bg-sage px-3 py-1.5 text-xs font-bold text-card hover:opacity-90"
+            >
+              새로고침
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 최상위 화면 전환 */}
       <div className="mx-auto max-w-4xl px-5 pt-4">
@@ -192,7 +289,7 @@ export default function App() {
               setView('recipes');
               setSheet({ kind: 'detail', id: recipeId });
             }}
-            onEdit={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
+            onEdit={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id, returnTo: 'none' })}
             onDelete={(id) => setBrewLogs((prev) => prev.filter((l) => l.id !== id))}
           />
         </main>
@@ -300,6 +397,7 @@ export default function App() {
 
       {detailRecipe && (
         <RecipeDetail
+          key={detailRecipe.id}
           recipe={detailRecipe}
           sibling={sibling}
           onSwitchTo={(id) => setSheet({ kind: 'detail', id })}
@@ -310,8 +408,10 @@ export default function App() {
           onEdit={detailRecipe.custom ? () => setSheet({ kind: 'form', id: detailRecipe.id }) : undefined}
           onDelete={detailRecipe.custom ? () => deleteRecipe(detailRecipe.id) : undefined}
           logs={logsForRecipe(brewLogs, detailRecipe.id)}
-          onLogBrew={(actualSec) => setSheet({ kind: 'log', recipeId: detailRecipe.id, logId: null, actualSec })}
-          onOpenLog={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id })}
+          onLogBrew={(actualSec) =>
+            setSheet({ kind: 'log', recipeId: detailRecipe.id, logId: null, actualSec, returnTo: 'detail' })
+          }
+          onOpenLog={(log) => setSheet({ kind: 'log', recipeId: log.recipeId, logId: log.id, returnTo: 'detail' })}
           myGrinder={myGrinderProfile}
           calibration={effectiveCalibration}
           beanPicker={
@@ -345,7 +445,7 @@ export default function App() {
           calibration={effectiveCalibration}
           defaultBeanId={activeBean?.id}
           onSave={saveLog}
-          onClose={() => setSheet({ kind: 'detail', id: sheet.recipeId })}
+          onClose={() => setSheet(logReturnsToDetail ? { kind: 'detail', id: sheet.recipeId } : null)}
         />
       )}
 

@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import type { BrewStep, Category, DripperType, Recipe, RoastLevel, ServeTemp } from '../types';
+import type { BrewStep, Category, DripperType, PourTechnique, Recipe, RoastLevel, ServeTemp } from '../types';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { CATEGORIES } from '../lib/labels';
+import { formatSec, sortSteps } from '../lib/brew';
+import { parseGrinderText } from '../lib/grinders';
+import { FLOW_LABEL, PATTERN_LABEL, describePour } from '../lib/pour';
+import { PourGlyph } from './PourGlyph';
 
 interface Props {
   /** 수정할 레시피. 없으면 새로 추가 */
@@ -18,9 +22,23 @@ interface DraftStep {
   waterG: string;
   label: string;
   hint: string;
+  pattern: PourTechnique['pattern'] | '';
+  flow: PourTechnique['flow'] | '';
+  pace: PourTechnique['pace'] | '';
+  agitation: PourTechnique['agitation'] | '';
 }
 
-const emptyStep = (): DraftStep => ({ min: '', sec: '', waterG: '', label: '', hint: '' });
+const emptyStep = (): DraftStep => ({
+  min: '',
+  sec: '',
+  waterG: '',
+  label: '',
+  hint: '',
+  pattern: '',
+  flow: '',
+  pace: '',
+  agitation: '',
+});
 
 const toDraftSteps = (steps: BrewStep[]): DraftStep[] =>
   steps.map((s) => ({
@@ -29,7 +47,25 @@ const toDraftSteps = (steps: BrewStep[]): DraftStep[] =>
     waterG: s.waterG === null ? '' : String(s.waterG),
     label: s.label,
     hint: s.hint ?? '',
+    pattern: s.pour?.pattern ?? '',
+    flow: s.pour?.flow ?? '',
+    pace: s.pour?.pace ?? '',
+    agitation: s.pour?.agitation ?? '',
   }));
+
+const splitSec = (sec: number | undefined) => ({
+  min: sec === undefined ? '' : String(Math.floor(sec / 60)),
+  sec: sec === undefined ? '' : String(sec % 60),
+});
+
+/** 분·초 두 칸을 초로. 둘 다 비었으면 undefined */
+function toSec(min: string, sec: string): number | undefined {
+  if (min.trim() === '' && sec.trim() === '') return undefined;
+  const m = Number(min || 0);
+  const s = Number(sec || 0);
+  if (!Number.isFinite(m) || !Number.isFinite(s)) return undefined;
+  return Math.max(0, Math.round(m * 60 + s));
+}
 
 /**
  * 레시피 추가/수정 폼.
@@ -58,24 +94,33 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
   const [note, setNote] = useState(initial?.note ?? '');
   const [finishNote, setFinishNote] = useState(initial?.finishing?.note ?? '');
   const [dilutionG, setDilutionG] = useState(String(initial?.finishing?.waterG ?? ''));
-  const [steps, setSteps] = useState<DraftStep[]>(
-    initial ? toDraftSteps(initial.steps) : [emptyStep()],
-  );
+  const [total, setTotal] = useState(splitSec(initial?.totalSec));
+  const [steps, setSteps] = useState<DraftStep[]>(initial ? toDraftSteps(initial.steps) : [emptyStep()]);
   const [error, setError] = useState<string | null>(null);
 
-  const parsedSteps: BrewStep[] = steps
-    .filter((s) => s.label.trim() !== '')
-    .map((s) => {
-      const hasTime = s.min.trim() !== '' || s.sec.trim() !== '';
-      const atSec = hasTime ? (Number(s.min || 0) || 0) * 60 + (Number(s.sec || 0) || 0) : null;
-      const waterG = s.waterG.trim() === '' ? null : Number(s.waterG);
-      const step: BrewStep = { atSec, waterG: Number.isFinite(waterG) ? waterG : null, label: s.label.trim() };
-      if (s.hint.trim()) step.hint = s.hint.trim();
-      return step;
-    });
+  const parsedSteps: BrewStep[] = sortSteps(
+    steps
+      .filter((s) => s.label.trim() !== '')
+      .map((s) => {
+        const atSec = toSec(s.min, s.sec) ?? null;
+        const water = s.waterG.trim() === '' ? null : Number(s.waterG);
+        const step: BrewStep = { atSec, waterG: Number.isFinite(water) ? water : null, label: s.label.trim() };
+        if (s.hint.trim()) step.hint = s.hint.trim();
+        const pour: PourTechnique = {};
+        if (s.pattern) pour.pattern = s.pattern;
+        if (s.flow) pour.flow = s.flow;
+        if (s.pace) pour.pace = s.pace;
+        if (s.agitation) pour.agitation = s.agitation;
+        if (Object.keys(pour).length) step.pour = pour;
+        return step;
+      }),
+  );
 
   const waterG = parsedSteps.reduce((acc, s) => acc + (s.waterG ?? 0), 0);
   const lastAt = parsedSteps.reduce((acc, s) => (s.atSec !== null && s.atSec > acc ? s.atSec : acc), 0);
+  const totalSecInput = toSec(total.min, total.sec);
+  // 종료 시각을 비우면 마지막 단계 시각으로 — 그러면 타이머가 마지막 단계가 시작되는 순간 끝나므로 폼에서 알려준다
+  const totalSec = totalSecInput ?? lastAt;
 
   const setStep = (i: number, patch: Partial<DraftStep>) =>
     setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -88,6 +133,8 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
     if (!Number.isFinite(temp) || temp <= 0) return setError('물 온도를 숫자로 입력하세요.');
     if (parsedSteps.length === 0) return setError('추출 단계를 최소 한 개 입력하세요.');
     if (waterG <= 0) return setError('단계 중 최소 하나에는 붓는 물 양이 있어야 합니다.');
+    if (totalSecInput !== undefined && totalSecInput < lastAt)
+      return setError(`종료 시각(${formatSec(totalSecInput)})이 마지막 단계(${formatSec(lastAt)})보다 빠릅니다.`);
     if (youtubeUrl.trim()) {
       try {
         const u = new URL(youtubeUrl.trim());
@@ -97,19 +144,12 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
       }
     }
 
-    const grinderSettings = grinderText
-      .split('/')
-      .map((chunk) => chunk.trim())
-      .filter(Boolean)
-      .map((chunk) => {
-        const at = chunk.lastIndexOf(' ');
-        return at > 0
-          ? { grinder: chunk.slice(0, at).trim(), setting: chunk.slice(at + 1).trim() }
-          : { grinder: chunk, setting: '' };
-      });
-
+    const grinderSettings = parseGrinderText(grinderText);
     const dilution = Number(dilutionG);
+
+    // 폼에 칸이 없는 필드(family, pourSource, waterNote, 얼음·우유)는 수정해도 잃지 않도록 원본 위에 덮어쓴다
     const recipe: Recipe = {
+      ...initial,
       id: initial?.id ?? `custom-${Date.now().toString(36)}`,
       title: title.trim(),
       category,
@@ -120,26 +160,39 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
       tempC: temp,
       grind: grind.trim() || '—',
       gear: gear.trim() || '—',
-      totalSec: Math.max(lastAt, 1),
+      totalSec: Math.max(totalSec, 1),
       steps: parsedSteps,
       custom: true,
     };
+    // 폼에서 비운 선택 필드는 지운다
+    delete recipe.dripperType;
+    delete recipe.author;
+    delete recipe.tag;
+    delete recipe.youtubeUrl;
+    delete recipe.grinderSettings;
+    delete recipe.note;
     if (category === 'drip') recipe.dripperType = dripperType;
     if (author.trim()) recipe.author = author.trim();
     if (tag.trim()) recipe.tag = tag.trim();
     if (youtubeUrl.trim()) recipe.youtubeUrl = youtubeUrl.trim();
     if (grinderSettings.length) recipe.grinderSettings = grinderSettings;
     if (note.trim()) recipe.note = note.trim();
-    if (finishNote.trim() || (Number.isFinite(dilution) && dilution > 0)) {
-      recipe.finishing = {};
-      if (finishNote.trim()) recipe.finishing.note = finishNote.trim();
-      if (Number.isFinite(dilution) && dilution > 0) recipe.finishing.waterG = dilution;
-    }
+
+    const finishing = { ...initial?.finishing };
+    delete finishing.note;
+    delete finishing.waterG;
+    if (finishNote.trim()) finishing.note = finishNote.trim();
+    if (Number.isFinite(dilution) && dilution > 0) finishing.waterG = dilution;
+    if (Object.keys(finishing).length) recipe.finishing = finishing;
+    else delete recipe.finishing;
 
     onSave(recipe);
   };
 
-  const field = 'w-full rounded-lg border border-line-strong bg-well px-3 py-2 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none';
+  const field =
+    'w-full rounded-lg border border-line-strong bg-well px-3 py-2 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none';
+  const small =
+    'rounded-md border border-line-strong bg-well px-2 py-1.5 text-sm text-ink focus:border-crema focus:outline-none';
   const labelCls = 'block text-xs font-semibold text-ink-soft';
 
   return (
@@ -151,7 +204,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5">
         <div>
           <label className={labelCls} htmlFor="rf-title">이름 *</label>
           <input id="rf-title" className={`${field} mt-1`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예: 비알레티 모카포트 기본" />
@@ -223,7 +276,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         <div>
           <label className={labelCls} htmlFor="rf-grinder">그라인더 세팅</label>
           <input id="rf-grinder" className={`${field} mt-1`} value={grinderText} onChange={(e) => setGrinderText(e.target.value)} placeholder="코만단테 26~27 / EK43 13~14" />
-          <p className="mt-1 text-[11px] text-ink-faint">여러 그라인더는 / 로 구분합니다.</p>
+          <p className="mt-1 text-[11px] text-ink-faint">여러 그라인더는 / 로 구분합니다. Femobook A2 값을 적으면 환산 없이 그대로 보입니다.</p>
         </div>
         <div>
           <label className={labelCls} htmlFor="rf-gear">추천 기구</label>
@@ -241,28 +294,93 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
             <span className="num text-xs text-ink-faint">총 {waterG}g</span>
           </div>
           <div className="mt-2 space-y-2">
-            {steps.map((s, i) => (
-              <div key={i} className="rounded-xl border border-line bg-well p-3">
-                <div className="flex items-center gap-2">
-                  <input aria-label={`${i + 1}단계 분`} className="w-12 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.min} onChange={(e) => setStep(i, { min: e.target.value })} placeholder="분" />
-                  <span className="text-ink-faint">:</span>
-                  <input aria-label={`${i + 1}단계 초`} className="w-12 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.sec} onChange={(e) => setStep(i, { sec: e.target.value })} placeholder="초" />
-                  <input aria-label={`${i + 1}단계 물 양`} className="w-16 rounded-md border border-line-strong bg-well px-2 py-1.5 text-center num text-sm text-ink focus:border-crema focus:outline-none" inputMode="numeric" value={s.waterG} onChange={(e) => setStep(i, { waterG: e.target.value })} placeholder="g" />
-                  <input aria-label={`${i + 1}단계 동작`} className="min-w-0 flex-1 rounded-md border border-line-strong bg-well px-2 py-1.5 text-sm text-ink focus:border-crema focus:outline-none" value={s.label} onChange={(e) => setStep(i, { label: e.target.value })} placeholder="동작 (예: 뜸 들이기)" />
-                  <button type="button" onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))} aria-label={`${i + 1}단계 삭제`} disabled={steps.length === 1} className="shrink-0 rounded-md p-1.5 text-ink-faint hover:text-danger disabled:opacity-30">
-                    <Icon name="trash" size={15} />
-                  </button>
+            {steps.map((s, i) => {
+              const pour: PourTechnique = {};
+              if (s.pattern) pour.pattern = s.pattern;
+              if (s.flow) pour.flow = s.flow;
+              if (s.pace) pour.pace = s.pace;
+              if (s.agitation) pour.agitation = s.agitation;
+              const hasPour = describePour(pour) !== '';
+              return (
+                <div key={i} className="rounded-xl border border-line bg-well p-3">
+                  <div className="flex items-center gap-2">
+                    <input aria-label={`${i + 1}단계 분`} className={`${small} num w-12 text-center`} inputMode="numeric" value={s.min} onChange={(e) => setStep(i, { min: e.target.value })} placeholder="분" />
+                    <span className="text-ink-faint">:</span>
+                    <input aria-label={`${i + 1}단계 초`} className={`${small} num w-12 text-center`} inputMode="numeric" value={s.sec} onChange={(e) => setStep(i, { sec: e.target.value })} placeholder="초" />
+                    <input aria-label={`${i + 1}단계 물 양`} className={`${small} num w-16 text-center`} inputMode="numeric" value={s.waterG} onChange={(e) => setStep(i, { waterG: e.target.value })} placeholder="g" />
+                    <input aria-label={`${i + 1}단계 동작`} className={`${small} min-w-0 flex-1`} value={s.label} onChange={(e) => setStep(i, { label: e.target.value })} placeholder="동작 (예: 뜸 들이기)" />
+                    <button type="button" onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))} aria-label={`${i + 1}단계 삭제`} disabled={steps.length === 1} className="shrink-0 rounded-md p-1.5 text-ink-faint hover:text-danger disabled:opacity-30">
+                      <Icon name="trash" size={15} />
+                    </button>
+                  </div>
+                  <input aria-label={`${i + 1}단계 힌트`} className={`${field} mt-2`} value={s.hint} onChange={(e) => setStep(i, { hint: e.target.value })} placeholder="힌트 (예: 30초 대기)" />
+
+                  {/* 붓는 방법 — 고르면 애니메이션이 바로 미리 보인다 */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5">
+                      <select aria-label={`${i + 1}단계 궤적`} className={small} value={s.pattern} onChange={(e) => setStep(i, { pattern: e.target.value as DraftStep['pattern'] })}>
+                        <option value="">궤적 —</option>
+                        {(Object.keys(PATTERN_LABEL) as (keyof typeof PATTERN_LABEL)[]).map((k) => (
+                          <option key={k} value={k}>{PATTERN_LABEL[k]}</option>
+                        ))}
+                      </select>
+                      <select aria-label={`${i + 1}단계 물줄기`} className={small} value={s.flow} onChange={(e) => setStep(i, { flow: e.target.value as DraftStep['flow'] })}>
+                        <option value="">물줄기 —</option>
+                        {(Object.keys(FLOW_LABEL) as (keyof typeof FLOW_LABEL)[]).map((k) => (
+                          <option key={k} value={k}>{FLOW_LABEL[k]}</option>
+                        ))}
+                      </select>
+                      <select aria-label={`${i + 1}단계 속도`} className={small} value={s.pace} onChange={(e) => setStep(i, { pace: e.target.value as DraftStep['pace'] })}>
+                        <option value="">속도 —</option>
+                        <option value="slow">천천히</option>
+                        <option value="fast">빠르게</option>
+                      </select>
+                      <select aria-label={`${i + 1}단계 교반`} className={small} value={s.agitation} onChange={(e) => setStep(i, { agitation: e.target.value as DraftStep['agitation'] })}>
+                        <option value="">교반 —</option>
+                        <option value="stir">교반 (젓기)</option>
+                        <option value="swirl">스월링</option>
+                      </select>
+                    </div>
+                    {hasPour ? (
+                      <PourGlyph pour={pour} size={56} />
+                    ) : (
+                      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-[10px] leading-tight text-ink-faint" aria-hidden="true">
+                        붓는
+                        <br />
+                        방법
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <input aria-label={`${i + 1}단계 힌트`} className={`${field} mt-2`} value={s.hint} onChange={(e) => setStep(i, { hint: e.target.value })} placeholder="힌트 (예: 가는 물줄기, 30초 대기)" />
-              </div>
-            ))}
+              );
+            })}
           </div>
           <button type="button" onClick={() => setSteps((p) => [...p, emptyStep()])} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-ink-soft hover:border-crema hover:text-crema">
             <Icon name="plus" size={16} />
             단계 추가
           </button>
-          <p className="mt-2 text-[11px] text-ink-faint">시간을 비우면 시계로 자동 진행하지 않는 단계가 됩니다. 물 양을 비우면 &quot;눈대중&quot;으로 표시됩니다.</p>
+          <p className="mt-2 text-[11px] text-ink-faint">
+            시간을 비우면 시계로 자동 진행하지 않는 단계가 됩니다. 물 양을 비우면 &quot;눈대중&quot;으로 표시됩니다. 순서는 시각대로
+            정리됩니다.
+          </p>
         </section>
+
+        {/* 종료 시각 — 이게 없으면 타이머가 마지막 단계가 시작되는 순간 끝난다 */}
+        <div>
+          <label className={labelCls} htmlFor="rf-total-min">종료 시각 (총 추출 시간)</label>
+          <div className="mt-1 flex items-center gap-2">
+            <input id="rf-total-min" aria-label="종료 분" className={`${small} num w-14 text-center`} inputMode="numeric" value={total.min} onChange={(e) => setTotal((t) => ({ ...t, min: e.target.value }))} placeholder="분" />
+            <span className="text-ink-faint">:</span>
+            <input aria-label="종료 초" className={`${small} num w-14 text-center`} inputMode="numeric" value={total.sec} onChange={(e) => setTotal((t) => ({ ...t, sec: e.target.value }))} placeholder="초" />
+            <span className="num text-xs text-ink-faint">
+              {totalSecInput === undefined
+                ? parsedSteps.length
+                  ? `비우면 마지막 단계 시각 ${formatSec(lastAt)}에 타이머가 끝납니다`
+                  : ''
+                : `타이머가 ${formatSec(totalSecInput)}에 끝납니다`}
+            </span>
+          </div>
+        </div>
 
         <div>
           <label className={labelCls} htmlFor="rf-note">메모</label>

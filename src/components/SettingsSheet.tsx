@@ -5,6 +5,7 @@ import { Modal } from './Modal';
 import { type Calibration, GRINDERS, findGrinder } from '../lib/grinders';
 import { THEME_OPTIONS, type ThemePref } from '../lib/theme';
 import type { PourMotionPref } from '../hooks/usePourMotion';
+import { isBean, isBrewLog, isRecipe } from '../lib/validate';
 
 interface Props {
   onClose: () => void;
@@ -80,19 +81,20 @@ export function SettingsSheet({
         ? { recipes: parsed as Recipe[] }
         : (parsed as Partial<Backup>);
 
-      const recipes = (payload.recipes ?? []).filter(
-        (r): r is Recipe => typeof r?.id === 'string' && typeof r?.title === 'string' && Array.isArray(r?.steps),
-      );
-      const logs = (payload.logs ?? []).filter(
-        (l): l is BrewLog => typeof l?.id === 'string' && typeof l?.recipeId === 'string',
-      );
-      const importedBeans = (payload.beans ?? []).filter(
-        (b): b is Bean => typeof b?.id === 'string' && typeof b?.name === 'string',
-      );
+      const rawRecipes = Array.isArray(payload.recipes) ? payload.recipes : [];
+      const rawLogs = Array.isArray(payload.logs) ? payload.logs : [];
+      const rawBeans = Array.isArray(payload.beans) ? payload.beans : [];
+      const recipes = rawRecipes.filter(isRecipe);
+      const logs = rawLogs.filter(isBrewLog);
+      const importedBeans = rawBeans.filter(isBean);
+      const skipped = rawRecipes.length + rawLogs.length + rawBeans.length - recipes.length - logs.length - importedBeans.length;
 
       if (!recipes.length && !logs.length && !importedBeans.length) throw new Error('읽을 수 있는 데이터가 없습니다');
       onImport({ recipes, logs, beans: importedBeans });
-      setMessage(`레시피 ${recipes.length} · 기록 ${logs.length} · 원두 ${importedBeans.length} 불러왔습니다.`);
+      setMessage(
+        `레시피 ${recipes.length} · 기록 ${logs.length} · 원두 ${importedBeans.length} 불러왔습니다.` +
+          (skipped ? ` 모양이 맞지 않는 ${skipped}개는 건너뛰었습니다.` : ''),
+      );
     } catch (e) {
       setMessage(`불러오기 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     }
@@ -107,7 +109,7 @@ export function SettingsSheet({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-5">
         <section>
           <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">내 그라인더</h3>
           <p className="mt-1 text-xs text-ink-faint">

@@ -54,8 +54,8 @@ await step('용챔 레시피의 EK43 은 1~11 다이얼로 표시된다', async 
 await step('카스야 4:6 은 나선 푸어가 움직이는 그림으로 나온다', async () => {
   await page.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
   const d = page.locator('[role=dialog]');
-  // 타이머 카드 — 움직이는 그림 (animateMotion 이 들어 있다)
-  const live = d.locator('[aria-live=polite] svg[role=img][aria-label="나선"]');
+  // 타이머 카드 — 움직이는 그림. live 영역은 단계 제목 줄에만 있으므로 섹션으로 찾는다
+  const live = d.locator('section[aria-label="브루잉 타이머"] svg[role=img][aria-label="나선"]');
   await live.waitFor();
   if ((await live.locator('animateMotion').count()) !== 1) throw new Error('나선 그림이 움직이지 않는다');
   // 단계 표 — 다섯 푸어 모두 열자마자 움직인다
@@ -75,7 +75,7 @@ await step('484 는 타이머를 켜기 전에도 푸어가 움직이고, 뜸 �
   if ((await center.locator('animate').count()) === 0) throw new Error('센터 푸어 물결이 움직이지 않는다');
   if ((await d.locator('ol svg[role=img][aria-label="큰 원"] animateMotion').count()) !== 1) throw new Error('큰 원이 돌지 않는다');
   // 타이머 카드는 뜸 단계 — 1차 붓는 법을 어느 단계 것인지 밝혀서 크게 미리 재생
-  const card = d.locator('[aria-live=polite]');
+  const card = d.locator('section[aria-label="브루잉 타이머"]');
   await card.getByText('1차 (1:00)부터 이렇게 부어요').waitFor();
   const big = await card.locator('svg[role=img]').first().getAttribute('width');
   if (Number(big) < 120) throw new Error(`타이머 카드 애니메이션이 작다: ${big}px`);
@@ -135,6 +135,25 @@ await step('타이머가 돌고 단계가 넘어간다', async () => {
   console.log(`      시계 ${t0} → ${t1}`);
 });
 
+await step('HOT/ICE 를 바꾸면 돌던 타이머가 넘어가지 않고 새로 시작한다', async () => {
+  const d = page.locator('[role=dialog]');
+  // 앞 단계에서 HOT(4666 V2) 타이머가 돌고 있다. ICE 로 바꾸면 그 타이머가 따라오면 안 된다
+  await d.getByRole('button', { name: '일시정지' }).waitFor();
+  await d.getByRole('button', { name: /ICE 버전 보기/ }).click();
+  await page.waitForFunction(() => document.querySelector('[role=dialog] [role=timer]')?.textContent === '0:00');
+  if (!(await d.getByRole('button', { name: '시작' }).isVisible())) throw new Error('타이머가 이어서 돈다');
+  // 진행 바 트랙이 배경과 구분된다
+  const same = await page.evaluate(() => {
+    const bar = document.querySelector('[role=dialog] [role=presentation]');
+    const sec = bar?.closest('section');
+    return !!bar && !!sec && getComputedStyle(bar).backgroundColor === getComputedStyle(sec).backgroundColor;
+  });
+  if (same) throw new Error('진행 바 트랙이 배경색과 같다');
+  // 다음 단계가 HOT 에서 시작하므로 되돌려 둔다
+  await d.getByRole('button', { name: /HOT 버전 보기/ }).click();
+  await page.waitForFunction(() => document.querySelector('[role=dialog] h2')?.textContent?.includes('4666 V2'));
+});
+
 await step('HOT/ICE 버전 전환이 된다', async () => {
   const d = page.locator('[role=dialog]');
   await d.getByRole('button', { name: /ICE 버전 보기/ }).click();
@@ -166,9 +185,21 @@ await step('레시피를 추가하면 빈 카테고리가 채워진다', async (
   await d.getByLabel('1단계 초').fill('0');
   await d.getByLabel('1단계 물 양').fill('120');
   await d.getByLabel('1단계 동작').fill('물 채우고 가열');
+  await d.getByLabel('1단계 궤적').selectOption('center');
+  await d.getByLabel('1단계 속도').selectOption('slow');
+  // 고르는 즉시 폼 안에서 미리보기가 움직인다
+  if ((await d.locator('svg[role=img][aria-label="센터 푸어 · 천천히"] animate').count()) === 0) throw new Error('폼 미리보기가 없다');
+  await d.getByLabel('종료 분').fill('4');
+  await d.getByLabel('종료 초').fill('30');
   await d.getByRole('button', { name: '저장' }).click();
   await page.waitForFunction(() =>
     document.querySelector('[role=dialog] h2')?.textContent?.includes('모카포트 테스트'));
+  // 종료 시각이 마지막 단계 시각(0:00)이 아니라 입력한 4:30 이다
+  const total = await d.locator('dt', { hasText: '목표 시간' }).locator('..').locator('dd').textContent();
+  if (total?.trim() !== '4:30') throw new Error(`목표 시간 ${total}`);
+  // 붓는 방법이 저장돼 단계 표에서 움직인다
+  if ((await d.locator('ol svg[role=img][aria-label="센터 푸어 · 천천히"] animateMotion, ol svg[role=img][aria-label="센터 푸어 · 천천히"] animate').count()) === 0)
+    throw new Error('저장된 붓는 방법이 움직이지 않는다');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: /모카포트/ }).click();
   await page.waitForFunction(() => document.querySelectorAll('article').length === 1);
@@ -260,6 +291,75 @@ await step('원두를 고르면 그 원두의 기준으로 분쇄도가 바뀐�
   await page.locator('main select').first().selectOption('');
   body = await page.textContent('main');
   if (!body.includes('Femobook A2 46~49.5')) throw new Error(`원두 해제 후 복귀 안 됨: ${body.slice(0, 300)}`);
+});
+
+await step('삭제는 확인을 거치고, 취소하면 남는다', async () => {
+  await page.getByRole('button', { name: /^레시피$/ }).click();
+  await page.getByRole('button', { name: /모카포트/ }).click();
+  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).click();
+  const d = page.locator('[role=dialog]');
+  // 이 레시피로 기록을 하나 남겨 둔다 (지워진 뒤에도 고칠 수 있어야 한다)
+  await d.getByRole('button', { name: '타이머 없이 기록하기' }).click();
+  await page.getByRole('button', { name: '좋다', exact: true }).click();
+  await page.getByRole('button', { name: '저장' }).click();
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).click();
+
+  let asked = 0;
+  const dismiss = async (dlg) => { asked += 1; await dlg.dismiss(); };
+  page.on('dialog', dismiss);
+  await d.getByRole('button', { name: '삭제' }).click();
+  await page.waitForTimeout(200);
+  page.off('dialog', dismiss);
+  if (asked !== 1) throw new Error('확인 없이 지워진다');
+  if (!(await d.isVisible())) throw new Error('취소했는데 상세가 닫혔다');
+
+  const accept = async (dlg) => dlg.accept();
+  page.on('dialog', accept);
+  await d.getByRole('button', { name: '삭제' }).click();
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  page.off('dialog', accept);
+  if ((await page.getByRole('button', { name: '모카포트 테스트', exact: true }).count()) !== 0) throw new Error('지워지지 않았다');
+});
+
+await step('지워진 레시피의 기록도 열어서 고칠 수 있다', async () => {
+  await page.getByRole('button', { name: /^기록/ }).click();
+  const card = page.locator('article', { hasText: '모카포트 테스트' }).first();
+  await card.getByRole('button', { name: '기록 수정' }).click();
+  const d = page.locator('[role=dialog]');
+  await d.getByText('모카포트 테스트 (지워진 레시피)').waitFor();
+  await page.keyboard.press('Escape');
+  // 기록 탭에서 열었으니 닫으면 상세가 뜨지 않는다
+  await page.waitForSelector('[role=dialog]', { state: 'detached' });
+  await page.getByRole('button', { name: /^레시피$/ }).click();
+  await page.getByRole('button', { name: /브루잉/ }).click();
+});
+
+await step('타이머 카드의 스크린리더 알림은 초마다 바뀌지 않는다', async () => {
+  await page.getByRole('button', { name: '484 오리지널', exact: true }).click();
+  const d = page.locator('[role=dialog]');
+  await d.getByRole('button', { name: '시작' }).click();
+  const live = d.locator('[aria-live=polite]').first();
+  const t0 = await live.textContent();
+  await page.waitForTimeout(1300);
+  if ((await live.textContent()) !== t0) throw new Error('live 영역이 초마다 바뀐다');
+  await page.keyboard.press('Escape');
+});
+
+await step('모양이 깨진 저장 데이터는 걸러지고 배너로 알린다', async () => {
+  await page.evaluate(() => {
+    const ok = { id: 'ok-1', title: '멀쩡한 레시피', category: 'drip', serve: 'hot', roast: 'any', beanG: 15, waterG: 200, tempC: 92, grind: '보통', gear: 'V60', totalSec: 120, steps: [{ atSec: 0, waterG: 200, label: '붓기' }], custom: true };
+    const bad = { id: 'bad-1', title: '깨진 레시피', steps: 'not-an-array' };
+    localStorage.setItem('mcr:customRecipes', JSON.stringify([ok, bad]));
+  });
+  await page.reload();
+  await page.waitForSelector('article');
+  if (!(await page.getByText('모양이 맞지 않아 건너뛰었습니다').isVisible())) throw new Error('배너가 없다');
+  if ((await page.getByRole('button', { name: '멀쩡한 레시피', exact: true }).count()) !== 1) throw new Error('멀쩡한 레시피가 사라졌다');
+  if ((await page.getByRole('button', { name: '깨진 레시피', exact: true }).count()) !== 0) throw new Error('깨진 레시피가 목록에 남아 있다');
+  await page.evaluate(() => localStorage.removeItem('mcr:customRecipes'));
+  await page.reload();
+  await page.waitForSelector('article');
 });
 
 await step("기기의 '동작 줄이기'면 멈추고, 설정의 '항상 움직이기'로 다시 움직인다", async () => {

@@ -14,6 +14,28 @@ export function applyTheme(pref: ThemePref): void {
   const root = document.documentElement;
   if (pref === 'auto') delete root.dataset.theme;
   else root.dataset.theme = pref;
+  syncThemeColor(pref);
+}
+
+/**
+ * 주소창·상태바 색(theme-color). index.html 의 두 meta 는 기기 설정만 따르므로,
+ * 설정에서 직접 고른 테마는 여기서 덮어쓴다. 'auto' 면 media 가 있는 원래 meta 로 돌아간다.
+ */
+function syncThemeColor(pref: ThemePref): void {
+  const ID = 'mcr-theme-color';
+  let meta = document.getElementById(ID) as HTMLMetaElement | null;
+  if (pref === 'auto') {
+    meta?.remove();
+    return;
+  }
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.id = ID;
+    meta.name = 'theme-color';
+    // media 가 있는 meta 보다 앞에 두어야 먼저 매칭된다
+    document.head.prepend(meta);
+  }
+  meta.content = pref === 'dark' ? '#16100c' : '#f3ece2';
 }
 
 /** 첫 렌더 전에 저장된 테마를 입힌다 — 그러지 않으면 크림색이 번쩍했다가 어두워진다 */

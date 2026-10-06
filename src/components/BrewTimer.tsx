@@ -114,7 +114,7 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
 
       {/* 진행 바 */}
       {auto && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-well" role="presentation">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line" role="presentation">
           <div
             className={`h-full rounded-full transition-[width] duration-200 ${status === 'done' ? 'bg-sage' : 'bg-crema'}`}
             style={{ width: `${progress}%` }}
@@ -123,12 +123,14 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
       )}
 
       {/* 지금 할 일 — 화면을 흘끗 봤을 때 가장 먼저 읽혀야 하는 줄 */}
-      <div aria-live="polite" className="mt-4 min-h-[4.5rem] rounded-xl border border-line bg-card px-4 py-3">
+      <div className="mt-4 min-h-[4.5rem] rounded-xl border border-line bg-card px-4 py-3">
         {status === 'idle' && current < 0 ? (
           <p className="text-sm text-ink-soft">시작을 누르면 단계별로 안내합니다.</p>
         ) : status === 'done' ? (
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 font-bold text-sage">추출 완료 · {recipe.finishing?.note ?? '마무리하세요'}</p>
+            <p aria-live="polite" className="min-w-0 font-bold text-sage">
+              추출 완료 · {recipe.finishing?.note ?? '마무리하세요'}
+            </p>
             <button
               type="button"
               onClick={() => onLogBrew(elapsed)}
@@ -139,9 +141,10 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
           </div>
         ) : step ? (
           <>
-            <p className="text-lg font-bold text-ink">
+            <p aria-live="polite" className="text-lg font-bold text-ink">
               {step.label}
               {step.waterG !== null && step.waterG > 0 && <span className="ml-2 num text-crema">+{step.waterG}g</span>}
+              {describePour(step.pour) && <span className="sr-only"> · {describePour(step.pour)}</span>}
             </p>
             {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
             {auto && next && (

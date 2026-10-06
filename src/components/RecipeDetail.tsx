@@ -95,7 +95,7 @@ export function RecipeDetail({
       </header>
 
       {/* 본문 */}
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5">
         <BrewTimer recipe={recipe} soundOn={soundOn} onLogBrew={onLogBrew} />
 
 

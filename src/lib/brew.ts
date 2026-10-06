@@ -72,3 +72,18 @@ export function targetWaterAt(steps: BrewStep[], elapsedSec: number): number | n
 export function pourCount(steps: BrewStep[]): number {
   return steps.filter(isPour).length;
 }
+
+/**
+ * 단계를 시각순으로. 폼에서 1:10 을 0:40 보다 위에 적어도 타이머와 표가 시간순이 되게.
+ * 시각이 없는 단계(눈대중·반복)는 서로의 순서를 지키며 시각 있는 단계 뒤에 온다.
+ */
+export function sortSteps(steps: BrewStep[]): BrewStep[] {
+  return steps
+    .map((step, index) => ({ step, index }))
+    .sort((a, b) => {
+      const ta = a.step.atSec ?? Number.POSITIVE_INFINITY;
+      const tb = b.step.atSec ?? Number.POSITIVE_INFINITY;
+      return ta - tb || a.index - b.index;
+    })
+    .map((x) => x.step);
+}

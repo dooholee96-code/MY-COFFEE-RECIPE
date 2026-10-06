@@ -79,7 +79,14 @@ export function LogsView({ logs, beans, onOpenRecipe, onEdit, onDelete }: Props)
                       <button type="button" onClick={() => onEdit(log)} aria-label="기록 수정" className="rounded-lg p-1.5 text-ink-faint hover:text-ink">
                         <Icon name="edit" size={15} />
                       </button>
-                      <button type="button" onClick={() => onDelete(log.id)} aria-label="기록 삭제" className="rounded-lg p-1.5 text-ink-faint hover:text-danger">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`${dateLabel(log.brewedAt)} ${log.recipeTitle} 기록을 지울까요?`)) onDelete(log.id);
+                        }}
+                        aria-label="기록 삭제"
+                        className="rounded-lg p-1.5 text-ink-faint hover:text-danger"
+                      >
                         <Icon name="trash" size={15} />
                       </button>
                     </div>

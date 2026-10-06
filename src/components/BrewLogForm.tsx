@@ -128,7 +128,7 @@ export function BrewLogForm({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5">
         {/* 맛 — 가장 먼저 묻는다. 나머지는 대부분 자동으로 채워져 있다. */}
         <section>
           <h3 className="text-xs font-bold tracking-wider text-ink-soft uppercase">어땠나요?</h3>

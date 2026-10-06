@@ -73,7 +73,7 @@ export function Modal({ open, onClose, label, children }: Props) {
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="animate-sheet relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-line bg-card shadow-2xl outline-none sm:max-w-lg sm:rounded-3xl"
+        className="animate-sheet relative flex max-h-[92vh] max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-line bg-card shadow-2xl outline-none sm:max-w-lg sm:rounded-3xl"
       >
         {children}
       </div>

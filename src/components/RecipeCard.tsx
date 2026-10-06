@@ -29,7 +29,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
           <span
             className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
               recipe.serve === 'hot'
-                ? 'border-hot/25 bg-hot-soft text-danger'
+                ? 'border-hot/25 bg-hot-soft text-hot'
                 : 'border-ice/25 bg-ice-soft text-ice'
             }`}
           >
@@ -119,7 +119,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
       </div>
 
       {recipe.note && (
-        <p className="mt-3 line-clamp-2 rounded-lg border border-crema/25 bg-crema-soft px-3 py-2 text-xs text-ink">
+        <p className="mt-3 line-clamp-2 rounded-lg border border-crema/25 bg-crema-soft px-3 py-2 text-xs break-keep text-ink">
           {recipe.note}
         </p>
       )}

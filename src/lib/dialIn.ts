@@ -1,4 +1,4 @@
-import type { BrewLog, Recipe, TasteVerdict } from '../types';
+import type { BrewLog, TasteVerdict } from '../types';
 import { type GrinderProfile, oneStepLabel } from './grinders';
 
 export interface Adjustment {
@@ -137,9 +137,4 @@ export function bestLog(logs: BrewLog[]): BrewLog | null {
       ? l
       : best,
   );
-}
-
-/** 기록에서 레시피 기본값을 만든다 — "지난번 그대로 다시" 용 */
-export function draftFromLog(log: BrewLog, recipe: Recipe): { beanG: number; grindNote: string | undefined } {
-  return { beanG: log.beanG || recipe.beanG, grindNote: log.grindNote };
 }

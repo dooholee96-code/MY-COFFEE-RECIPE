@@ -63,27 +63,40 @@ export function useBrewTimer(totalSec: number) {
 /**
  * 화면이 꺼지지 않게 잡아둔다. 추출 중에 폰이 잠기면 타이머를 못 본다.
  * Screen Wake Lock API 는 지원 범위가 넓지 않으므로 실패는 무시한다.
+ *
+ * 브라우저는 다른 앱으로 갔다 오거나 탭을 바꾸면 잠금을 스스로 푼다. 다시 돌아왔을 때
+ * 잡아 주지 않으면 그 뒤로는 화면이 꺼진다 — visibilitychange 에서 다시 건다.
  */
 export function useWakeLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    type WakeLock = { release: () => Promise<void> };
+    type WakeLock = { release: () => Promise<void>; released?: boolean };
     let lock: WakeLock | null = null;
     let cancelled = false;
 
     const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<WakeLock> } };
-    nav.wakeLock
-      ?.request('screen')
-      .then((l) => {
-        if (cancelled) void l.release();
-        else lock = l;
-      })
-      .catch(() => {
-        /* 지원하지 않거나 거부됨 */
-      });
+    const acquire = () => {
+      if (cancelled || document.visibilityState !== 'visible') return;
+      nav.wakeLock
+        ?.request('screen')
+        .then((l) => {
+          if (cancelled) void l.release();
+          else lock = l;
+        })
+        .catch(() => {
+          /* 지원하지 않거나 거부됨 */
+        });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && (!lock || lock.released)) acquire();
+    };
+
+    acquire();
+    document.addEventListener('visibilitychange', onVisible);
 
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
       void lock?.release().catch(() => {});
     };
   }, [active]);

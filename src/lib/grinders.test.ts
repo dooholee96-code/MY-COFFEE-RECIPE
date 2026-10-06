@@ -11,6 +11,7 @@ import {
   findGrinder,
   matchGrinderProfile,
   parseClicks,
+  parseGrinderText,
 } from './grinders';
 import type { Bean } from '../types';
 
@@ -248,5 +249,24 @@ describe('oneStepLabel', () => {
     expect(oneStepLabel(findGrinder('timemore'))).toBe('1클릭');
     expect(oneStepLabel(findGrinder('ek43'))).toBe('0.75눈금'); // 30 / 38.9
     expect(oneStepLabel(findGrinder('ek43-1-11'))).toBe('0.5눈금'); // 30 / 62.3
+  });
+});
+
+describe('parseGrinderText', () => {
+  it('그라인더 이름과 세팅을 가른다', () => {
+    expect(parseGrinderText('코만단테 22클릭')).toEqual([{ grinder: '코만단테', setting: '22클릭' }]);
+    expect(parseGrinderText('코만단테 26~27 / EK43 13~14')).toEqual([
+      { grinder: '코만단테', setting: '26~27' },
+      { grinder: 'EK43', setting: '13~14' },
+    ]);
+  });
+  it('세팅 뒤에 설명이 붙어도, 이름에 숫자가 있어도 맞는다', () => {
+    expect(parseGrinderText('코만단테 30 (아주 굵게)')).toEqual([{ grinder: '코만단테', setting: '30 (아주 굵게)' }]);
+    expect(parseGrinderText('EK43 (1~11) 9.0')).toEqual([{ grinder: 'EK43 (1~11)', setting: '9.0' }]);
+    expect(parseGrinderText('Femobook A2 45')).toEqual([{ grinder: 'Femobook A2', setting: '45' }]);
+  });
+  it('숫자가 없으면 이름만', () => {
+    expect(parseGrinderText('코만단테')).toEqual([{ grinder: '코만단테', setting: '' }]);
+    expect(parseGrinderText('')).toEqual([]);
   });
 });

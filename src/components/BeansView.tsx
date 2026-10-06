@@ -176,6 +176,7 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
           onDelete={
             editing
               ? () => {
+                  if (!window.confirm(`'${editing.name}' 원두를 지울까요? 이 원두로 남긴 기록은 그대로 남습니다.`)) return;
                   onDelete(editing.id);
                   setEditing(undefined);
                 }
@@ -247,7 +248,7 @@ function BeanForm({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-5">
         <div>
           <label className={labelCls} htmlFor="bf-name">이름 *</label>
           <input id="bf-name" className={`${field} mt-1`} value={name} onChange={(e) => setName(e.target.value)} placeholder="에티오피아 예가체프" />

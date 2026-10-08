@@ -1,12 +1,13 @@
 import { KEYS, readJSON } from './storage';
 
-/** 'auto' = 기기 설정(라이트/다크)을 따른다 */
+/** 'auto' = 기기 설정(라이트/다크)을 따른다. 기본은 라이트 — 연표 앱과 같다 */
 export type ThemePref = 'auto' | 'light' | 'dark';
+export const DEFAULT_THEME: ThemePref = 'light';
 
 export const THEME_OPTIONS: { id: ThemePref; label: string; hint: string }[] = [
-  { id: 'auto', label: '자동', hint: '기기 설정을 따름' },
-  { id: 'light', label: '카페', hint: '크림 바탕' },
-  { id: 'dark', label: '에스프레소 바', hint: '어두운 바탕' },
+  { id: 'light', label: '라이트', hint: '연한 종이' },
+  { id: 'dark', label: '다크', hint: '밤' },
+  { id: 'auto', label: '시스템', hint: '기기 설정을 따름' },
 ];
 
 /** <html data-theme> 를 맞춘다. 토큰 전환은 index.css 가 이 속성을 보고 한다. */
@@ -35,11 +36,11 @@ function syncThemeColor(pref: ThemePref): void {
     // media 가 있는 meta 보다 앞에 두어야 먼저 매칭된다
     document.head.prepend(meta);
   }
-  meta.content = pref === 'dark' ? '#16100c' : '#f3ece2';
+  meta.content = pref === 'dark' ? '#1c1724' : '#f3e7d8';
 }
 
 /** 첫 렌더 전에 저장된 테마를 입힌다 — 그러지 않으면 크림색이 번쩍했다가 어두워진다 */
 export function applyStoredTheme(): void {
-  const pref = readJSON<ThemePref>(KEYS.theme, 'auto');
-  applyTheme(pref === 'light' || pref === 'dark' ? pref : 'auto');
+  const pref = readJSON<ThemePref>(KEYS.theme, DEFAULT_THEME);
+  applyTheme(pref === 'auto' || pref === 'dark' ? pref : 'light');
 }

@@ -14,31 +14,58 @@
 }
 
 /*
+ * 손글씨 제목용 — 빅 히스토리 연표와 같은 Gaegu(SIL OFL). 전체 한글(1.8MB)이 아니라
+ * 이 앱의 고정 문구(워드마크·섹션 머리·탭·시트 제목)에 쓰이는 글자만 추려 담았다(75KB).
+ * 그래서 `hand` 는 코드에 적힌 문구에만 쓰고, 레시피 제목 같은 사용자 입력에는 쓰지 않는다 —
+ * 없는 글자는 고딕으로 떨어져 한 줄 안에서 글꼴이 섞인다.
+ * 글자를 더 쓰면 scripts/subset-gaegu.md 의 순서로 다시 추린다.
+ */
+@font-face {
+  font-family: 'Gaegu UI';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/gaegu-ui-700.woff2') format('woff2');
+}
+
+/*
  * ── 디자인 토큰 ───────────────────────────────────────────────────────────────
  * 컴포넌트는 stone-800, amber-600 같은 팔레트 색을 직접 쓰지 않고 아래 의미 이름만 쓴다.
- * 라이트(카페 메뉴판)와 다크(에스프레소 바)는 이 변수들만 바꿔 끼운다.
+ *
+ * 시로 테마 — 빅 히스토리 연표(THEBIGHISTORY)와 같은 결. 아기 토끼 시로가 사는 크림색 종이 위에
+ * 커피를 올린다. 라이트는 연한 종이(하늘 #f3e7d8, 크림 면 #fff8ef, 먹 #3a2a24), 다크는 밤하늘
+ * (#1c1724)에 같은 크림 카드가 떠 있는 모양. 강조색은 캐러멜(라이트) / 달빛 노랑(다크).
+ * 토끼 장식(귀·당근·발자국)은 blush·carrot·leaf 토큰을 쓴다 — 장식 전용, 글자색으로 쓰지 않는다.
  *
  * 모든 글자/배경 조합은 WCAG AA(4.5:1) 이상으로 맞췄다 — 주전자를 든 채 흘끗 보는
  * 화면이라 흐린 글씨가 가장 먼저 읽히지 않는다. 색을 바꾸면 대비부터 다시 재세요.
  */
 @theme {
   /* 면 */
-  --color-canvas: #f3ece2; /* 페이지 바탕 — 오트밀크 */
-  --color-card: #fcf8f2; /* 카드·시트 */
-  --color-well: #f0e8dc; /* 카드 안의 움푹한 칸, 입력창 */
-  --color-line: #e3d7c7; /* 가는 구분선 */
-  --color-line-strong: #cdbba5; /* 입력창·보조 버튼 테두리 */
+  --color-canvas: #f3e7d8; /* 페이지 바탕 — 연한 종이(하늘) */
+  --color-card: #fff8ef; /* 카드·시트 — 크림(foam) */
+  --color-well: #f4e9db; /* 카드 안의 움푹한 칸, 입력창 */
+  --color-line: #e6d6c4; /* 가는 구분선 */
+  --color-line-strong: #cfafb8; /* 입력창·보조 버튼 테두리 — 시로 윤곽선과 같은 분홍빛 회색 */
 
   /* 글자 */
-  --color-ink: #2a1c13; /* 에스프레소 */
-  --color-ink-soft: #5e4a3c;
-  --color-ink-faint: #735e4e;
+  --color-ink: #3a2a24; /* 먹 */
+  --color-ink-soft: #7a6058;
+  --color-ink-faint: #6f5850;
 
-  /* 강조 — 로스팅된 테라코타 */
-  --color-crema: #a24e26;
-  --color-crema-deep: #853e1c;
-  --color-crema-soft: #f5e4d4;
-  --color-on-crema: #fff9f2;
+  /* 강조 — 캐러멜 */
+  --color-crema: #96511c;
+  --color-crema-deep: #7a3f12;
+  --color-crema-soft: #fbe6d2;
+  --color-on-crema: #fff8ef;
+
+  /* 토끼 장식 — 귀 분홍, 당근, 잎. 장식에만 쓴다 */
+  --color-blush: #f2c4ce;
+  --color-blush-deep: #f2a7b3;
+  --color-carrot: #e8955b;
+  --color-leaf: #8fb58a;
+  --color-fur: #fff8ef;
+  --color-fur-line: #cfafb8;
 
   /* 의미색 */
   --color-hot: #a63f29;
@@ -58,48 +85,59 @@
   --color-roast-dark: #3b281c;
   --color-roast-dark-soft: #e6d8ca;
 
-  /* 서체 — 숫자와 워드마크만 세리프. 한글은 시스템 고딕으로 떨어진다. */
+  /* 서체 — 숫자는 세리프, 고정 제목은 손글씨, 본문·사용자 입력은 시스템 고딕. */
   --font-sans:
     'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic',
     'Noto Sans KR', system-ui, sans-serif;
   --font-display: Fraunces, Georgia, 'Times New Roman', var(--font-sans);
+  --font-hand: 'Gaegu UI', 'Apple SD Gothic Neo', 'Noto Sans KR', var(--font-sans);
 
-  --color-scrim: rgb(40 25 15 / 0.42); /* 시트 뒤를 덮는 막 */
+  --color-scrim: rgb(58 42 36 / 0.45); /* 시트 뒤를 덮는 막 */
 
-  --shadow-card: 0 1px 0 rgb(80 50 25 / 0.06), 0 10px 28px -16px rgb(80 50 25 / 0.35);
-  --shadow-float: 0 10px 30px -8px rgb(80 50 25 / 0.45);
+  --shadow-card: 0 1px 0 rgb(92 61 46 / 0.06), 0 10px 28px -16px rgb(92 61 46 / 0.35);
+  --shadow-float: 0 10px 30px -8px rgb(92 61 46 / 0.45);
+
+  /* 움직임 — 토끼처럼 살짝 튕기는 스프링 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-soft: cubic-bezier(0.22, 1.25, 0.36, 1);
 }
 
-/* 다크 — 에스프레소 바. 기기 설정을 따르되, 설정에서 고르면 그걸 우선한다. */
+/* 다크 — 밤. 기기 설정을 따르되, 설정에서 고르면 그걸 우선한다. 카드는 밤에도 같은 모양, 하늘만 어두워진다. */
 @layer base {
   :root[data-theme='dark'] {
-    --color-canvas: #16100c;
-    --color-card: #211812;
-    --color-well: #2a1f17;
-    --color-line: #3a2c21;
-    --color-line-strong: #4f3d2f;
-    --color-ink: #f3e8da;
-    --color-ink-soft: #cbb9a5;
-    --color-ink-faint: #a08b77;
-    --color-crema: #e3915a;
-    --color-crema-deep: #efa675;
-    --color-crema-soft: #3a2518;
-    --color-on-crema: #1c120b;
-    --color-hot: #ee8a70;
-    --color-hot-soft: #3a1f18;
+    --color-canvas: #1c1724;
+    --color-card: #2a2233;
+    --color-well: #352c40;
+    --color-line: #3f3549;
+    --color-line-strong: #5a4d66;
+    --color-ink: #fff8ef;
+    --color-ink-soft: #c8bbb6;
+    --color-ink-faint: #a99c9d;
+    --color-crema: #ffd98a;
+    --color-crema-deep: #ffe4a8;
+    --color-crema-soft: #3e3222;
+    --color-on-crema: #2a1c13;
+    --color-blush: #d9a3ad;
+    --color-blush-deep: #cf8d9a;
+    --color-carrot: #e8955b;
+    --color-leaf: #8fb58a;
+    --color-fur: #fff8ef;
+    --color-fur-line: #b4919c;
+    --color-hot: #f0907c;
+    --color-hot-soft: #3d221f;
     --color-ice: #8dbfdc;
-    --color-ice-soft: #17283a;
+    --color-ice-soft: #1d2a3d;
     --color-sage: #9cc690;
-    --color-sage-soft: #1f2e1c;
+    --color-sage-soft: #22301f;
     --color-danger: #f08a7e;
-    --color-danger-soft: #3a1b17;
+    --color-danger-soft: #3d1f1d;
     --color-roast-light: #e8c07a;
     --color-roast-light-soft: #3a2c14;
     --color-roast-medium: #e4a676;
     --color-roast-medium-soft: #3a2416;
     --color-roast-dark: #d9c6b3;
     --color-roast-dark-soft: #33271f;
-    --color-scrim: rgb(0 0 0 / 0.6);
+    --color-scrim: rgb(28 23 36 / 0.6);
     --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 30px -18px rgb(0 0 0 / 0.8);
     --shadow-float: 0 10px 30px -8px rgb(0 0 0 / 0.7);
     color-scheme: dark;
@@ -107,34 +145,40 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
-      --color-canvas: #16100c;
-      --color-card: #211812;
-      --color-well: #2a1f17;
-      --color-line: #3a2c21;
-      --color-line-strong: #4f3d2f;
-      --color-ink: #f3e8da;
-      --color-ink-soft: #cbb9a5;
-      --color-ink-faint: #a08b77;
-      --color-crema: #e3915a;
-      --color-crema-deep: #efa675;
-      --color-crema-soft: #3a2518;
-      --color-on-crema: #1c120b;
-      --color-hot: #ee8a70;
-      --color-hot-soft: #3a1f18;
+      --color-canvas: #1c1724;
+      --color-card: #2a2233;
+      --color-well: #352c40;
+      --color-line: #3f3549;
+      --color-line-strong: #5a4d66;
+      --color-ink: #fff8ef;
+      --color-ink-soft: #c8bbb6;
+      --color-ink-faint: #a99c9d;
+      --color-crema: #ffd98a;
+      --color-crema-deep: #ffe4a8;
+      --color-crema-soft: #3e3222;
+      --color-on-crema: #2a1c13;
+      --color-blush: #d9a3ad;
+      --color-blush-deep: #cf8d9a;
+      --color-carrot: #e8955b;
+      --color-leaf: #8fb58a;
+      --color-fur: #fff8ef;
+      --color-fur-line: #b4919c;
+      --color-hot: #f0907c;
+      --color-hot-soft: #3d221f;
       --color-ice: #8dbfdc;
-      --color-ice-soft: #17283a;
+      --color-ice-soft: #1d2a3d;
       --color-sage: #9cc690;
-      --color-sage-soft: #1f2e1c;
+      --color-sage-soft: #22301f;
       --color-danger: #f08a7e;
-      --color-danger-soft: #3a1b17;
+      --color-danger-soft: #3d1f1d;
       --color-roast-light: #e8c07a;
       --color-roast-light-soft: #3a2c14;
       --color-roast-medium: #e4a676;
       --color-roast-medium-soft: #3a2416;
       --color-roast-dark: #d9c6b3;
       --color-roast-dark-soft: #33271f;
-      --color-scrim: rgb(0 0 0 / 0.6);
-    --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 30px -18px rgb(0 0 0 / 0.8);
+      --color-scrim: rgb(28 23 36 / 0.6);
+      --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 30px -18px rgb(0 0 0 / 0.8);
       --shadow-float: 0 10px 30px -8px rgb(0 0 0 / 0.7);
       color-scheme: dark;
     }
@@ -174,6 +218,62 @@
   letter-spacing: -0.01em;
 }
 
+/* 손글씨 제목 — 코드에 적힌 고정 문구에만 (글꼴 서브셋 설명은 위 @font-face 참고) */
+@utility hand {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * 토끼 귀 표식 — 빅 히스토리 연표의 시대 머리와 같은, 귀 둘 쫑긋한 동그라미.
+ * 섹션 머리 앞에 둔다. 글자는 없고 장식뿐이라 aria-hidden 으로.
+ */
+@utility ear-mark {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-top: 10px;
+  border-radius: 50%;
+  background: var(--color-fur);
+  border: 1.5px solid var(--color-fur-line);
+  box-shadow: 0 0 0 3px var(--color-canvas);
+  flex: none;
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -11px;
+    width: 6px;
+    height: 13px;
+    border-radius: 4px;
+    background: var(--color-fur);
+    border: 1.5px solid var(--color-fur-line);
+    box-sizing: border-box;
+  }
+  &::before {
+    left: 1px;
+    transform: rotate(-12deg);
+  }
+  &::after {
+    right: 1px;
+    transform: rotate(12deg);
+  }
+}
+
+/* 발자국 — 시로가 지나간 자리. 진행 바의 머리에 둔다 */
+@utility paw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background:
+    radial-gradient(circle at 50% 68%, currentColor 0 30%, transparent 33%),
+    radial-gradient(circle at 18% 34%, currentColor 0 15%, transparent 18%),
+    radial-gradient(circle at 50% 18%, currentColor 0 15%, transparent 18%),
+    radial-gradient(circle at 82% 34%, currentColor 0 15%, transparent 18%);
+}
+
 /* 작은 영문 라벨 — 메뉴판의 섹션 머리 */
 @utility eyebrow {
   font-size: 0.6875rem;
@@ -203,11 +303,29 @@
 }
 
 .animate-sheet {
-  animation: sheet-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: sheet-in 0.32s var(--ease-spring-soft);
+}
+
+/* 당근을 누르면 한 번 깡총 */
+@keyframes hop {
+  0% {
+    transform: translateY(0) scale(1.1, 0.9);
+  }
+  40% {
+    transform: translateY(-4px) scale(0.95, 1.1);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+.animate-hop {
+  animation: hop 0.45s var(--ease-spring);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-sheet {
+  .animate-sheet,
+  .animate-hop {
     animation: none;
   }
   *,

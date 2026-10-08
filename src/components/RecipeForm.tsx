@@ -198,7 +198,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
   return (
     <Modal open onClose={onClose} label={initial ? '레시피 수정' : '레시피 추가'}>
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-5 py-4">
-        <h2 className="text-lg font-bold text-ink">{initial ? '레시피 수정' : '레시피 추가'}</h2>
+        <h2 className="hand text-[22px] leading-none text-ink">{initial ? '레시피 수정' : '레시피 추가'}</h2>
         <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full bg-well p-2 text-ink-soft hover:bg-line">
           <Icon name="close" size={18} />
         </button>

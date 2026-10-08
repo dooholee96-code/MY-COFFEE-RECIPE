@@ -104,7 +104,7 @@ export function PourGlyph({ pour, size = 72, animate = true, pov = false, paper 
 function Ripple({ r0, r1, dur, begin = 0, moving }: { r0: number; r1: number; dur: number; begin?: number; moving: boolean }) {
   if (!moving) return null;
   return (
-    <circle r={r0} fill="none" className="stroke-crema" strokeWidth={1.4}>
+    <circle r={r0} fill="none" className="stroke-ill-water" strokeWidth={1.4}>
       <animate attributeName="r" values={`${r0};${r1}`} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
       <animate attributeName="stroke-opacity" values="0.8;0" dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
     </circle>
@@ -137,12 +137,12 @@ function TopView({
   return (
     <g>
       {/* 드리퍼 테두리와 커피 베드 */}
-      <circle cx={C} cy={C} r={45} className="stroke-line-strong" fill="none" strokeWidth={2} />
-      <circle cx={C} cy={C} r={39} className="fill-ink" fillOpacity={0.1} />
+      <circle cx={C} cy={C} r={45} className="fill-ill-glass stroke-ill-line" strokeWidth={2} />
+      <circle cx={C} cy={C} r={39} className="fill-ill-coffee-soft" />
 
       {pattern === 'fill' && (
         // 가득 채우기 — 물이 가장자리까지 차오른다
-        <circle cx={C} cy={C} r={moving ? 12 : 34} className="fill-crema" fillOpacity={0.24}>
+        <circle cx={C} cy={C} r={moving ? 12 : 34} className="fill-ill-water-soft" fillOpacity={0.85}>
           {moving && <animate attributeName="r" values="10;37;37" keyTimes="0;0.8;1" dur={dur} repeatCount="indefinite" />}
         </circle>
       )}
@@ -150,12 +150,12 @@ function TopView({
       {!still && (
         // 궤적 — 흐릿한 길 위로 물줄기가 지나간 자리가 진해진다
         <>
-          <path d={d} fill="none" className="stroke-crema" strokeOpacity={0.16} strokeWidth={width} strokeLinecap="round" />
+          <path d={d} fill="none" className="stroke-ill-water" strokeOpacity={0.22} strokeWidth={width} strokeLinecap="round" />
           <path
             d={d}
             fill="none"
-            className="stroke-crema"
-            strokeOpacity={moving ? 0.65 : 0.5}
+            className="stroke-ill-water"
+            strokeOpacity={moving ? 0.7 : 0.55}
             strokeWidth={width}
             strokeLinecap="round"
             pathLength={100}
@@ -176,7 +176,7 @@ function TopView({
       {still ? (
         // 센터 푸어 / 가득 채우기 — 한 점에 부어 물결이 번진다
         <g transform={`translate(${C} ${C})`}>
-          {!moving && [12, 22].map((r) => <circle key={r} r={r} fill="none" className="stroke-crema" strokeWidth={1.4} strokeOpacity={0.35} />)}
+          {!moving && [12, 22].map((r) => <circle key={r} r={r} fill="none" className="stroke-ill-water" strokeWidth={1.4} strokeOpacity={0.45} />)}
           <Ripple r0={dot} r1={28} dur={cycle / 1.5} moving={moving} />
           <Ripple r0={dot} r1={28} dur={cycle / 1.5} begin={cycle / 3} moving={moving} />
           {hands && (
@@ -184,8 +184,8 @@ function TopView({
               <hands.Kettle paper={paper} />
             </g>
           )}
-          <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.2} />
-          <circle r={dot} className="fill-crema" />
+          <circle r={dot * 1.9} className="fill-ill-water" fillOpacity={0.25} />
+          <circle r={dot} className="fill-ill-water" />
         </g>
       ) : moving ? (
         // 움직일 때는 점을 원점에 두고 animateMotion 이 궤적 좌표로 옮긴다 — 물결도, 주전자를 든 손도 점을 따라간다
@@ -196,8 +196,8 @@ function TopView({
               <hands.Kettle paper={paper} />
             </g>
           )}
-          <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.22} />
-          <circle r={dot} className="fill-crema" />
+          <circle r={dot * 1.9} className="fill-ill-water" fillOpacity={0.25} />
+          <circle r={dot} className="fill-ill-water" />
           <animateMotion dur={dur} repeatCount="indefinite" path={d} />
         </g>
       ) : (
@@ -207,8 +207,8 @@ function TopView({
               <hands.Kettle paper={paper} />
             </g>
           )}
-          <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.2} />
-          <circle r={dot} className="fill-crema" />
+          <circle r={dot * 1.9} className="fill-ill-water" fillOpacity={0.25} />
+          <circle r={dot} className="fill-ill-water" />
         </g>
       )}
     </g>
@@ -224,31 +224,33 @@ function SideView({ width, cycle, moving }: { width: number; cycle: number; movi
   return (
     <g>
       {/* 주전자 주둥이 */}
-      <path d="M12 13 Q30 11 44 19" fill="none" className="stroke-ink-soft" strokeWidth={3.2} strokeLinecap="round" />
+      <path d="M12 13 Q30 11 44 19" fill="none" className="stroke-ill-kettle" strokeWidth={3.6} strokeLinecap="round" />
+      <path d="M12 13 Q30 11 44 19" fill="none" className="stroke-ill-line" strokeWidth={1.2} strokeLinecap="round" strokeOpacity={0.5} />
       {/* 물줄기 — 두께가 유량 */}
-      <path d={STREAM} fill="none" className="stroke-crema" strokeOpacity={0.28} strokeWidth={width} strokeLinecap="round" />
-      <path d={STREAM} fill="none" className="stroke-crema" strokeWidth={width} strokeLinecap="round" strokeDasharray={moving ? '6 7' : undefined}>
+      <path d={STREAM} fill="none" className="stroke-ill-water" strokeOpacity={0.3} strokeWidth={width} strokeLinecap="round" />
+      <path d={STREAM} fill="none" className="stroke-ill-water" strokeWidth={width} strokeLinecap="round" strokeDasharray={moving ? '6 7' : undefined}>
         {moving && <animate attributeName="stroke-dashoffset" from="13" to="0" dur={`${fall}s`} repeatCount="indefinite" />}
       </path>
       {/* 떨어지는 물방울 — 떨어지는 속도가 붓는 속도 */}
       {moving &&
         [0, 1, 2].map((i) => (
-          <circle key={i} r={drop} className="fill-crema">
+          <circle key={i} r={drop} className="fill-ill-water">
             <animateMotion dur={`${fall * 1.6}s`} begin={`${-(i * fall * 1.6) / 3}s`} repeatCount="indefinite" path={STREAM} />
           </circle>
         ))}
       {/* 드리퍼(원뿔)와 커피 베드 — 물이 닿는 자리에 물결 */}
-      <path d="M20 50 H80 L59 86 H41 Z" fill="none" className="stroke-line-strong" strokeWidth={2.4} strokeLinejoin="round" />
-      <path d="M29 64 H71 L59 86 H41 Z" className="fill-ink" fillOpacity={0.14} />
+      <path d="M20 50 H80 L59 86 H41 Z" className="fill-ill-glass stroke-ill-line" strokeWidth={2.2} strokeLinejoin="round" />
+      <path d="M29 64 H71 L59 86 H41 Z" className="fill-ill-coffee-soft" />
+      <ellipse cx={50} cy={64} rx={21} ry={2.2} className="fill-ill-water-soft stroke-ill-water" strokeWidth={1} />
       {moving && (
-        <ellipse cx={50} cy={64} rx={3} ry={1.2} fill="none" className="stroke-crema" strokeWidth={1.3}>
+        <ellipse cx={50} cy={64} rx={3} ry={1.2} fill="none" className="stroke-ill-water" strokeWidth={1.3}>
           <animate attributeName="rx" values="3;19" dur={`${fall * 2}s`} repeatCount="indefinite" />
           <animate attributeName="ry" values="1.2;4" dur={`${fall * 2}s`} repeatCount="indefinite" />
           <animate attributeName="stroke-opacity" values="0.9;0" dur={`${fall * 2}s`} repeatCount="indefinite" />
         </ellipse>
       )}
       {/* 서버로 떨어지는 방울 */}
-      <circle cx={50} cy={90} r={2.2} className="fill-crema" opacity={moving ? 0 : 0.6}>
+      <circle cx={50} cy={90} r={2.2} className="fill-ill-coffee" opacity={moving ? 0 : 0.6}>
         {moving && (
           <>
             <animate attributeName="cy" values="87;97" dur={`${cycle}s`} repeatCount="indefinite" />

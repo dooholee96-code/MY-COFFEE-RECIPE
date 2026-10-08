@@ -50,6 +50,24 @@
   --color-danger: #a0362b;
   --color-danger-soft: #f6ddd8;
 
+  /*
+   * 일러스트 전용 — 마스코트와 붓기 그림의 면 색. 글자에는 쓰지 않는다 (대비를 재지 않았다).
+   * 동화책 느낌: 크림색 털, 분홍 볼, 테라코타 앞치마, 하늘빛 물, 갈색 커피, 나무 탁자.
+   */
+  --color-ill-line: #5b3f2e; /* 그림 외곽선 — 잉크보다 부드럽게 */
+  --color-ill-fur: #f7ecda;
+  --color-ill-ear: #f4c3bb;
+  --color-ill-blush: #efa298;
+  --color-ill-apron: #d98f68;
+  --color-ill-scarf: #93b98c;
+  --color-ill-kettle: #a7bfcc;
+  --color-ill-water: #3f8fc2;
+  --color-ill-water-soft: #c2ddee;
+  --color-ill-coffee: #7a4a2a;
+  --color-ill-coffee-soft: #cfa883;
+  --color-ill-wood: #e3c7a1;
+  --color-ill-glass: rgb(255 255 255 / 0.55);
+
   /* 배전도 */
   --color-roast-light: #8a5a0e;
   --color-roast-light-soft: #f5e6c8;
@@ -103,6 +121,19 @@
     --color-sage-soft: #1f2e1c;
     --color-danger: #f08a7e;
     --color-danger-soft: #3a1b17;
+    --color-ill-line: #7b5a44;
+    --color-ill-fur: #eadbc3;
+    --color-ill-ear: #cf8f86;
+    --color-ill-blush: #d4857a;
+    --color-ill-apron: #b8704a;
+    --color-ill-scarf: #6f9a6a;
+    --color-ill-kettle: #7d96a3;
+    --color-ill-water: #8dbfdc;
+    --color-ill-water-soft: #2b4a5e;
+    --color-ill-coffee: #5a3419;
+    --color-ill-coffee-soft: #6e4a30;
+    --color-ill-wood: #4b3524;
+    --color-ill-glass: rgb(255 255 255 / 0.1);
     --color-roast-light: #e8c07a;
     --color-roast-light-soft: #3a2c14;
     --color-roast-medium: #e4a676;
@@ -137,6 +168,19 @@
       --color-sage-soft: #1f2e1c;
       --color-danger: #f08a7e;
       --color-danger-soft: #3a1b17;
+      --color-ill-line: #7b5a44;
+      --color-ill-fur: #eadbc3;
+      --color-ill-ear: #cf8f86;
+      --color-ill-blush: #d4857a;
+      --color-ill-apron: #b8704a;
+      --color-ill-scarf: #6f9a6a;
+      --color-ill-kettle: #7d96a3;
+      --color-ill-water: #8dbfdc;
+      --color-ill-water-soft: #2b4a5e;
+      --color-ill-coffee: #5a3419;
+      --color-ill-coffee-soft: #6e4a30;
+      --color-ill-wood: #4b3524;
+      --color-ill-glass: rgb(255 255 255 / 0.1);
       --color-roast-light: #e8c07a;
       --color-roast-light-soft: #3a2c14;
       --color-roast-medium: #e4a676;

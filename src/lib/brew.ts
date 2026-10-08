@@ -42,6 +42,11 @@ export function formatRatio(recipe: Pick<Recipe, 'beanG' | 'waterG'>): string {
 }
 
 /** 타이머가 시계로 자동 진행할 수 있는 레시피인지 (모든 단계에 시각이 있어야 한다) */
+/** 이 단계에서 물을 붓는가. 0g 은 뜸·교반·대기 같은 동작, null 은 눈대중으로 붓는 단계 */
+export function isPouringStep(step: Pick<BrewStep, 'waterG'>): boolean {
+  return step.waterG === null || step.waterG > 0;
+}
+
 export function isAutoPlayable(recipe: Pick<Recipe, 'steps'>): boolean {
   return recipe.steps.every((s) => s.atSec !== null);
 }

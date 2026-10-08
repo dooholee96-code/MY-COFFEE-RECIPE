@@ -1,4 +1,5 @@
 import type { BrewStep } from '../types';
+import { isPouringStep } from './brew';
 import type { MascotPose } from '../mascot/types';
 
 export type { MascotPose };
@@ -12,6 +13,5 @@ export type TimerPhase = 'idle' | 'running' | 'paused' | 'done';
 export function mascotPoseFor(phase: TimerPhase, step: BrewStep | undefined): MascotPose {
   if (phase === 'done') return 'done';
   if (phase === 'idle' || !step) return 'idle';
-  const pouring = step.waterG === null || step.waterG > 0;
-  return pouring ? 'pour' : 'wait';
+  return isPouringStep(step) ? 'pour' : 'wait';
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Bean, BrewLog, Category, Filters, Recipe } from './types';
+import type { Bean, BrewLog, Filters, Recipe } from './types';
 import { seedRecipes } from './data/recipes';
-import { defaultFilters, filterRecipes, hasActiveFilters } from './lib/filter';
+import { defaultFilters, filterRecipes, groupRecipes, hasActiveFilters, recentRecipes } from './lib/filter';
 import { KEYS, STORAGE_ERROR_EVENT } from './lib/storage';
 import { useServiceWorkerUpdate } from './hooks/useServiceWorkerUpdate';
 import { isBean, isBrewLog, isRecipe, sanitizeList } from './lib/validate';
@@ -24,10 +24,10 @@ const keepBeans = (raw: unknown): Bean[] => {
   return r.items;
 };
 import { usePersistentState } from './hooks/usePersistentState';
-import { CATEGORIES } from './lib/labels';
 import { Icon } from './components/Icon';
 import { FilterBar } from './components/FilterBar';
-import { RecipeCard } from './components/RecipeCard';
+import { RecipeRow } from './components/RecipeRow';
+import { BottomNav, type View } from './components/BottomNav';
 import { RecipeDetail } from './components/RecipeDetail';
 import { RecipeForm } from './components/RecipeForm';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -54,15 +54,6 @@ type Sheet =
       returnTo: 'detail' | 'none';
     }
   | null;
-
-/** 최상위 화면 */
-type View = 'recipes' | 'logs' | 'beans';
-
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'recipes', label: '레시피' },
-  { id: 'logs', label: '기록' },
-  { id: 'beans', label: '원두' },
-];
 
 export default function App() {
   const [view, setView] = useState<View>('recipes');
@@ -106,6 +97,10 @@ export default function App() {
   const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const allRecipes = useMemo(() => [...seedRecipes, ...customRecipes], [customRecipes]);
   const visible = useMemo(() => filterRecipes(allRecipes, filters, favorites), [allRecipes, filters, favorites]);
+  const groups = useMemo(() => groupRecipes(visible, favorites), [visible, favorites]);
+  const filtering = hasActiveFilters(filters);
+  /** 홈 맨 위의 "최근 내린" — 조건을 걸지 않았을 때만. 늘 내리는 레시피로 가는 가장 짧은 길 */
+  const recent = useMemo(() => (filtering ? [] : recentRecipes(brewLogs, allRecipes)), [filtering, brewLogs, allRecipes]);
 
   const patch = useCallback((p: Partial<Filters>) => setFilters((prev) => ({ ...prev, ...p })), []);
 
@@ -113,11 +108,6 @@ export default function App() {
     (id: string) => setFavoriteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
     [setFavoriteIds],
   );
-
-  const openCategory = (category: Category) => {
-    // 카테고리를 바꿀 때 드리퍼 필터를 들고 가면 엉뚱하게 비어 보인다
-    patch({ category, dripper: 'all' });
-  };
 
   const saveRecipe = (recipe: Recipe) => {
     setCustomRecipes((prev) => {
@@ -200,7 +190,7 @@ export default function App() {
 
   return (
     <PourMotionContext.Provider value={pourMotion}>
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-32">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
           <div className="flex min-w-0 shrink-0 items-center gap-3">
@@ -255,31 +245,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 최상위 화면 전환 */}
-      <div className="mx-auto max-w-4xl px-5 pt-4">
-        <nav aria-label="화면" className="flex gap-1 rounded-xl border border-line bg-card p-1">
-          {VIEWS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              aria-current={view === v.id ? 'page' : undefined}
-              onClick={() => setView(v.id)}
-              className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
-                view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:bg-well hover:text-ink'
-              }`}
-            >
-              {v.label}
-              {v.id === 'logs' && brewLogs.length > 0 && (
-                <span className="ml-1.5 num text-xs opacity-70">{brewLogs.length}</span>
-              )}
-              {v.id === 'beans' && beans.filter((b) => !b.finished).length > 0 && (
-                <span className="ml-1.5 num text-xs opacity-70">{beans.filter((b) => !b.finished).length}</span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
-
       {view === 'logs' && (
         <main className="mx-auto max-w-4xl px-5 pt-5">
           <LogsView
@@ -312,35 +277,10 @@ export default function App() {
         </main>
       )}
 
-      <main className={`mx-auto max-w-4xl px-5 pt-5 ${view === 'recipes' ? '' : 'hidden'}`}>
-        {/* 카테고리 탭 */}
-        <nav aria-label="추출 방식" className="scrollbar-hide -mx-5 mb-5 flex gap-2 overflow-x-auto px-5 pb-1">
-          {CATEGORIES.map((cat) => {
-            const count = allRecipes.filter((r) => r.category === cat.id).length;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                aria-current={filters.category === cat.id ? 'page' : undefined}
-                onClick={() => openCategory(cat.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition ${
-                  filters.category === cat.id
-                    ? 'border-crema/40 bg-crema-soft text-crema-deep'
-                    : 'border-line bg-card text-ink-soft hover:bg-well hover:text-ink'
-                }`}
-              >
-                {cat.label}
-                <span className={`num text-xs ${filters.category === cat.id ? 'text-crema-deep/70' : 'text-ink-faint'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
-
+      <main className={`mx-auto max-w-4xl px-5 pt-4 ${view === 'recipes' ? '' : 'hidden'}`}>
         <FilterBar filters={filters} onChange={patch} favoriteCount={favorites.size} />
 
-        <div className="mt-2.5">
+        <div className="mt-3">
           <ActiveBeanPicker
             beans={beans}
             activeBeanId={activeBeanId}
@@ -350,37 +290,61 @@ export default function App() {
           />
         </div>
 
-        <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="text-lg font-bold text-ink">
-            <span className="eyebrow mr-2 align-middle">Menu</span>
-            {CATEGORIES.find((c) => c.id === filters.category)?.label}
-          </h2>
-          <p className="text-sm text-ink-soft">
-            <span className="num font-bold text-ink">{visible.length}</span>개
-          </p>
-        </div>
+        {/* 최근 내린 레시피 — 한 번 탭으로 상세·타이머까지 */}
+        {recent.length > 0 && (
+          <section aria-label="최근 내린 레시피" className="mt-5">
+            <h2 className="eyebrow mb-2">최근 내린</h2>
+            <div className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5">
+              {recent.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setSheet({ kind: 'detail', id: r.id })}
+                  className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-card px-3.5 py-2 text-sm font-bold text-ink shadow-card transition hover:border-line-strong"
+                >
+                  <span className={`h-2 w-2 rounded-full ${r.serve === 'hot' ? 'bg-hot' : 'bg-ice'}`} aria-hidden="true" />
+                  {r.title}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
-        {visible.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {visible.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                favorite={favorites.has(recipe.id)}
-                myGrinder={myGrinderProfile}
-                calibration={effectiveCalibration}
-                onOpen={() => setSheet({ kind: 'detail', id: recipe.id })}
-                onToggleFavorite={() => toggleFavorite(recipe.id)}
-              />
+        {/* 카테고리별 구역 — 레시피가 있는 카테고리만. 구역 안에서는 즐겨찾기가 먼저 */}
+        {groups.length > 0 ? (
+          <div className="mt-5 space-y-6">
+            {groups.map((g) => (
+              <section key={g.category} aria-label={g.label}>
+                <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+                  <h2 className="text-base font-bold text-ink">{g.label}</h2>
+                  <p className="text-xs text-ink-soft">
+                    <span className="num font-bold text-ink">{g.recipes.length}</span>개
+                  </p>
+                </div>
+                <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-card shadow-card">
+                  {g.recipes.map((recipe) => (
+                    <RecipeRow
+                      key={recipe.id}
+                      recipe={recipe}
+                      favorite={favorites.has(recipe.id)}
+                      myGrinder={myGrinderProfile}
+                      calibration={effectiveCalibration}
+                      onOpen={() => setSheet({ kind: 'detail', id: recipe.id })}
+                      onToggleFavorite={() => toggleFavorite(recipe.id)}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
-          <EmptyState
-            category={filters.category}
-            filtered={hasActiveFilters(filters)}
-            onResetFilters={() => setFilters({ ...defaultFilters, category: filters.category })}
-            onAdd={() => setSheet({ kind: 'form', id: null })}
-          />
+          <div className="mt-5">
+            <EmptyState
+              filtered={filtering}
+              onResetFilters={() => setFilters(defaultFilters)}
+              onAdd={() => setSheet({ kind: 'form', id: null })}
+            />
+          </div>
         )}
       </main>
 
@@ -389,11 +353,17 @@ export default function App() {
         type="button"
         hidden={view !== 'recipes'}
         onClick={() => setSheet({ kind: 'form', id: null })}
-        className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-crema px-5 py-3.5 font-bold text-on-crema shadow-float transition hover:bg-crema-deep"
+        className="fixed right-5 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full bg-crema px-5 py-3.5 font-bold text-on-crema shadow-float transition hover:bg-crema-deep"
       >
         <Icon name="plus" size={18} />
         레시피 추가
       </button>
+
+      <BottomNav
+        view={view}
+        onChange={setView}
+        counts={{ logs: brewLogs.length, beans: beans.filter((b) => !b.finished).length }}
+      />
 
       {detailRecipe && (
         <RecipeDetail
@@ -429,7 +399,7 @@ export default function App() {
       {sheet?.kind === 'form' && (
         <RecipeForm
           initial={editingRecipe}
-          defaultCategory={filters.category}
+          defaultCategory="drip"
           onSave={saveRecipe}
           onClose={() => setSheet(editingRecipe ? { kind: 'detail', id: editingRecipe.id } : null)}
         />
@@ -473,21 +443,9 @@ export default function App() {
   );
 }
 
-function EmptyState({
-  category,
-  filtered,
-  onResetFilters,
-  onAdd,
-}: {
-  category: Category;
-  filtered: boolean;
-  onResetFilters: () => void;
-  onAdd: () => void;
-}) {
-  const label = CATEGORIES.find((c) => c.id === category)?.label ?? category;
-
+function EmptyState({ filtered, onResetFilters, onAdd }: { filtered: boolean; onResetFilters: () => void; onAdd: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-line px-6 py-12 text-center">
       <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
       {filtered ? (
         <>
@@ -498,7 +456,7 @@ function EmptyState({
         </>
       ) : (
         <>
-          <p className="mt-3 font-semibold text-ink-soft">{label} 레시피가 아직 없습니다.</p>
+          <p className="mt-3 font-semibold text-ink-soft">레시피가 아직 없습니다.</p>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
             직접 쓰는 레시피를 추가하면 여기에 쌓이고, 브라우저에 저장됩니다. 설정에서 JSON 으로 내보내
             저장소의 기본 레시피로 옮겨 심을 수도 있습니다.
@@ -509,7 +467,7 @@ function EmptyState({
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-crema px-4 py-2.5 text-sm font-bold text-on-crema hover:bg-crema-deep"
           >
             <Icon name="plus" size={16} />
-            {label} 레시피 추가
+            레시피 추가
           </button>
         </>
       )}

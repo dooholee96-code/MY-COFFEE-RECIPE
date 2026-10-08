@@ -97,19 +97,27 @@ await step('검색이 목록을 줄인다', async () => {
   await page.waitForFunction(() => document.querySelectorAll('article').length === 17);
 });
 
-await step('ICE 필터가 9개로 줄이고, 칩으로 해제된다', async () => {
-  await page.getByRole('button', { name: /^필터/ }).click();
+await step('ICE 칩이 9개로 줄이고, 다시 누르면 풀린다', async () => {
   await page.getByRole('button', { name: 'ICE', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('article').length === 9);
-  await page.getByRole('button', { name: /^필터/ }).click(); // 접기
-  await page.getByRole('button', { name: 'ICE', exact: true }).click(); // 칩으로 해제
+  await page.getByRole('button', { name: 'ICE', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('article').length === 17);
 });
 
-await step('빈 카테고리에 안내가 나온다', async () => {
-  await page.getByRole('button', { name: /에스프레소/ }).click();
-  await page.waitForSelector('text=에스프레소 레시피가 아직 없습니다');
-  await page.getByRole('button', { name: /브루잉/ }).click();
+await step('필터 패널의 드리퍼 조건은 접어도 칩으로 남고, 칩으로 풀린다', async () => {
+  await page.getByRole('button', { name: /^필터/ }).click();
+  await page.getByRole('button', { name: '칼리타', exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('article').length === 2);
+  await page.getByRole('button', { name: /^필터/ }).click(); // 접기
+  await page.getByRole('button', { name: '칼리타', exact: true }).click(); // 칩으로 해제
+  await page.waitForFunction(() => document.querySelectorAll('article').length === 17);
+});
+
+await step('조건에 맞는 레시피가 없으면 안내와 필터 초기화가 나온다', async () => {
+  await page.fill('input[type=search]', 'zzz-없는-레시피');
+  await page.waitForSelector('text=조건에 맞는 레시피가 없습니다');
+  await page.getByRole('button', { name: '필터 초기화' }).click();
+  await page.waitForFunction(() => document.querySelectorAll('article').length === 17);
 });
 
 await step('상세 시트가 열린다', async () => {
@@ -174,7 +182,7 @@ await step('즐겨찾기가 저장되고 새로고침 후에도 남는다', asyn
   if (pressed !== 'true') throw new Error(`aria-pressed=${pressed}`);
 });
 
-await step('레시피를 추가하면 빈 카테고리가 채워진다', async () => {
+await step('레시피를 추가하면 그 카테고리 구역이 생긴다', async () => {
   await page.getByRole('button', { name: '레시피 추가' }).click();
   const d = page.locator('[role=dialog]');
   await d.locator('#rf-title').fill('모카포트 테스트');
@@ -201,12 +209,13 @@ await step('레시피를 추가하면 빈 카테고리가 채워진다', async (
   if ((await d.locator('ol svg[role=img][aria-label="센터 푸어 · 천천히"] animateMotion, ol svg[role=img][aria-label="센터 푸어 · 천천히"] animate').count()) === 0)
     throw new Error('저장된 붓는 방법이 움직이지 않는다');
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: /모카포트/ }).click();
-  await page.waitForFunction(() => document.querySelectorAll('article').length === 1);
+  // 카테고리 탭이 아니라 구역 — 레시피가 생긴 카테고리만 구역이 된다
+  await page.getByRole('heading', { name: '모카포트', exact: true }).waitFor();
+  if ((await page.getByRole('heading', { name: '에스프레소', exact: true }).count()) !== 0) throw new Error('빈 카테고리가 구역으로 나온다');
+  await page.waitForFunction(() => document.querySelectorAll('article').length === 18);
 });
 
 await step('추출을 기록하면 조정 제안이 나온다', async () => {
-  await page.getByRole('button', { name: /브루잉/ }).click();
   await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
   const d = page.locator('[role=dialog]');
   await d.getByRole('button', { name: '타이머 없이 기록하기' }).click();
@@ -295,15 +304,16 @@ await step('원두를 고르면 그 원두의 기준으로 분쇄도가 바뀐�
 
 await step('삭제는 확인을 거치고, 취소하면 남는다', async () => {
   await page.getByRole('button', { name: /^레시피$/ }).click();
-  await page.getByRole('button', { name: /모카포트/ }).click();
-  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).click();
+  // '최근 내린' 칩과 목록 줄, 둘 다 같은 상세를 연다
+  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).first().click();
   const d = page.locator('[role=dialog]');
   // 이 레시피로 기록을 하나 남겨 둔다 (지워진 뒤에도 고칠 수 있어야 한다)
   await d.getByRole('button', { name: '타이머 없이 기록하기' }).click();
   await page.getByRole('button', { name: '좋다', exact: true }).click();
   await page.getByRole('button', { name: '저장' }).click();
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
-  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).click();
+  // '최근 내린' 칩과 목록 줄, 둘 다 같은 상세를 연다
+  await page.getByRole('button', { name: '모카포트 테스트', exact: true }).first().click();
 
   let asked = 0;
   const dismiss = async (dlg) => { asked += 1; await dlg.dismiss(); };
@@ -332,7 +342,6 @@ await step('지워진 레시피의 기록도 열어서 고칠 수 있다', async
   // 기록 탭에서 열었으니 닫으면 상세가 뜨지 않는다
   await page.waitForSelector('[role=dialog]', { state: 'detached' });
   await page.getByRole('button', { name: /^레시피$/ }).click();
-  await page.getByRole('button', { name: /브루잉/ }).click();
 });
 
 await step('타이머 카드의 스크린리더 알림은 초마다 바뀌지 않는다', async () => {
@@ -400,10 +409,32 @@ await step('바리스타 토끼가 상태를 따라 자세를 바꾸고, 타이�
   // 일시정지하면 그림이 멈춘다 (SMIL 요소가 없다)
   if ((await timer.locator('[data-mascot] animate, [data-mascot] animateTransform').count()) !== 0) throw new Error('일시정지인데 마스코트가 움직인다');
   await page.keyboard.press('Escape');
-  // 빈 화면(레시피가 없는 카테고리)에도 서 있다
-  await page.getByRole('button', { name: /^에스프레소/ }).click();
+  // 빈 화면(조건에 맞는 레시피 없음)에도 서 있다
+  await page.fill('input[type=search]', 'zzz-없는-레시피');
   await page.locator('main [data-mascot="idle"]').waitFor();
-  await page.getByRole('button', { name: /^브루잉/ }).click();
+  await page.fill('input[type=search]', '');
+});
+
+await step('붓는 방식이 없는 레시피도 기본 푸어오버 그림이 움직이고, 그 사실을 밝힌다', async () => {
+  await page.getByRole('button', { name: '4666 V2', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  await d.getByText('추출 단계').waitFor();
+  // 단계표: 붓는 단계 넷 모두 기본 그림(정보 없음 표시)이고 움직인다
+  const generic = d.locator('ol svg[data-generic]');
+  if ((await generic.count()) !== 4) throw new Error(`기본 그림 ${await generic.count()}개`);
+  if ((await generic.first().locator('animate').count()) === 0) throw new Error('기본 그림이 움직이지 않는다');
+  if ((await generic.first().getAttribute('aria-label')) !== '기본 푸어오버 (레시피에 붓는 방식 없음)') throw new Error('기본 그림의 이름이 다르다');
+  await d.getByText('흐린 그림은 기본 푸어오버 모습입니다').waitFor();
+  // 타이머 카드: 레시피에 없다는 말과 함께 기본 그림
+  const timer = d.locator('section[aria-label="브루잉 타이머"]');
+  await timer.getByText('붓는 방식은 레시피에 없어요').waitFor();
+  if ((await timer.locator('svg[data-generic] animate').count()) === 0) throw new Error('타이머 카드의 기본 그림이 움직이지 않는다');
+  // 방식이 적힌 레시피의 표에는 기본 그림이 없다
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
+  await page.locator('[role=dialog]').getByText('추출 단계').waitFor();
+  if ((await page.locator('[role=dialog] ol svg[data-generic]').count()) !== 0) throw new Error('카스야에 기본 그림이 섞였다');
+  await page.keyboard.press('Escape');
 });
 
 await step('콘솔 에러가 없다', async () => {

@@ -30,6 +30,13 @@ export function describePour(pour: PourTechnique | undefined): string {
     .join(' · ');
 }
 
+/**
+ * 붓는 방식 정보가 없는 단계에 보여주는 기본 그림의 이름.
+ * 레시피 데이터에는 아무것도 넣지 않는다 — 원본이 말하지 않은 방식을 데이터에 적지 않는다는 규칙 그대로.
+ * 화면에서만 "붓는 방식은 레시피에 없다"는 사실과 함께 기본 푸어오버 모습을 보여준다.
+ */
+export const GENERIC_POUR_LABEL = '기본 푸어오버 (레시피에 붓는 방식 없음)';
+
 /** 붓는 방식 정보가 하나라도 있는 단계가 있는지 */
 export function hasPourInfo(steps: BrewStep[]): boolean {
   return steps.some((s) => describePour(s.pour) !== '');

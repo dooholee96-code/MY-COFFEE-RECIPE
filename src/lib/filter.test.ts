@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultFilters, filterRecipes, hasActiveFilters } from './filter';
+import { defaultFilters, filterRecipes, groupRecipes, hasActiveFilters, recentRecipes } from './filter';
+import type { BrewLog, Recipe } from '../types';
 import { seedRecipes } from '../data/recipes';
 import type { Filters } from '../types';
 
@@ -11,9 +12,13 @@ describe('filterRecipes', () => {
     expect(filterRecipes(seedRecipes, f(), none)).toHaveLength(17);
   });
 
-  it('아직 레시피가 없는 카테고리는 빈 목록', () => {
-    expect(filterRecipes(seedRecipes, f({ category: 'espresso' }), none)).toHaveLength(0);
-    expect(filterRecipes(seedRecipes, f({ category: 'mokapot' }), none)).toHaveLength(0);
+  it('드리퍼를 고르면 드리퍼가 없는 레시피는 빠진다', () => {
+    const { dripperType: _drop, ...rest } = seedRecipes[0]!;
+    void _drop;
+    const moka: Recipe = { ...rest, id: 'm', category: 'mokapot' };
+    const all = [...seedRecipes, moka];
+    expect(filterRecipes(all, f(), none)).toHaveLength(18);
+    expect(filterRecipes(all, f({ dripper: 'v60' }), none).some((r) => r.id === 'm')).toBe(false);
   });
 
   it('HOT/ICE 로 가른다', () => {
@@ -61,14 +66,57 @@ describe('filterRecipes', () => {
 });
 
 describe('hasActiveFilters', () => {
-  it('카테고리 변경은 필터로 세지 않는다', () => {
+  it('기본값은 필터가 아니다', () => {
     expect(hasActiveFilters(f())).toBe(false);
-    expect(hasActiveFilters(f({ category: 'capsule' }))).toBe(false);
   });
   it('나머지는 필터로 센다', () => {
     expect(hasActiveFilters(f({ roast: 'dark' }))).toBe(true);
     expect(hasActiveFilters(f({ query: '  ' }))).toBe(false);
     expect(hasActiveFilters(f({ query: '카스야' }))).toBe(true);
     expect(hasActiveFilters(f({ favoritesOnly: true }))).toBe(true);
+  });
+});
+
+describe('groupRecipes', () => {
+  it('레시피가 있는 카테고리만 구역이 되고, 즐겨찾기가 먼저 온다', () => {
+    const groups = groupRecipes(seedRecipes, none);
+    expect(groups.map((g) => g.category)).toEqual(['drip']);
+    expect(groups[0]!.recipes).toHaveLength(17);
+
+    const third = seedRecipes[2]!;
+    const starred = groupRecipes(seedRecipes, new Set([third.id]));
+    expect(starred[0]!.recipes[0]!.id).toBe(third.id);
+    // 나머지는 원래 순서
+    expect(starred[0]!.recipes.slice(1).map((r) => r.id)).toEqual(seedRecipes.filter((r) => r.id !== third.id).map((r) => r.id));
+  });
+
+  it('카테고리 순서는 CATEGORIES 를 따른다', () => {
+    const moka: Recipe = { ...seedRecipes[0]!, id: 'm', category: 'mokapot' };
+    const esp: Recipe = { ...seedRecipes[0]!, id: 'e', category: 'espresso' };
+    expect(groupRecipes([esp, moka, ...seedRecipes], none).map((g) => g.category)).toEqual(['drip', 'mokapot', 'espresso']);
+  });
+});
+
+describe('recentRecipes', () => {
+  const log = (recipeId: string, brewedAt: string): BrewLog => ({
+    id: `${recipeId}-${brewedAt}`,
+    recipeId,
+    recipeTitle: recipeId,
+    brewedAt,
+    beanG: 15,
+    waterG: 200,
+    tempC: 92,
+  });
+  const a = seedRecipes[0]!;
+  const b = seedRecipes[1]!;
+
+  it('최신순, 레시피마다 한 번, 지워진 레시피는 뺀다', () => {
+    const logs = [log(a.id, '2026-01-01'), log(b.id, '2026-01-03'), log(a.id, '2026-01-02'), log('gone', '2026-01-04')];
+    expect(recentRecipes(logs, seedRecipes).map((r) => r.id)).toEqual([b.id, a.id]);
+  });
+
+  it('limit 을 지킨다', () => {
+    const logs = seedRecipes.slice(0, 6).map((r, i) => log(r.id, `2026-01-0${i + 1}`));
+    expect(recentRecipes(logs, seedRecipes, 4)).toHaveLength(4);
   });
 });

@@ -33,7 +33,7 @@ function Segmented<T extends string>({
             className={`flex-1 rounded-lg border py-2 text-xs font-bold transition md:text-sm ${
               value === opt.id
                 ? 'border-transparent bg-crema text-on-crema'
-                : 'border-line bg-well text-ink-soft hover:bg-well hover:text-ink'
+                : 'border-line bg-well text-ink-soft hover:text-ink'
             }`}
           >
             {opt.label}
@@ -44,36 +44,24 @@ function Segmented<T extends string>({
   );
 }
 
+const chipCls = (on: boolean) =>
+  `flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition ${
+    on ? 'border-crema/40 bg-crema-soft text-crema-deep' : 'border-line bg-card text-ink-soft hover:bg-well hover:text-ink'
+  }`;
+
 /**
- * 검색줄은 항상 보이고, 세부 필터는 접어 둔다.
- *
- * v1 은 드리퍼·배전도·온도 세 블록이 항상 펼쳐져 있어서 폰에서 첫 레시피 카드를
- * 보려면 한 화면을 통째로 스크롤해야 했다. 레시피를 고르는 것이 이 앱의 본래 목적이므로
- * 필터는 필요할 때만 펼치고, 접힌 상태에서는 지금 걸린 조건만 칩으로 보여준다.
+ * 검색 한 줄 + 칩 한 줄. 자주 쓰는 조건(즐겨찾기, HOT/ICE)은 칩으로 바로 켜고 끄고,
+ * 드리퍼·배전도는 "필터" 로 펼친다. 펼치지 않은 상태에서도 걸린 조건은 칩으로 보여 한 번에 푼다.
  */
 export function FilterBar({ filters, onChange, favoriteCount }: Props) {
   const [open, setOpen] = useState(false);
-
-  const active: { label: string; clear: Partial<Filters> }[] = [];
-  if (filters.dripper !== 'all' && filters.category === 'drip')
-    active.push({ label: dripperLabel(filters.dripper), clear: { dripper: 'all' } });
-  if (filters.roast !== 'all')
-    active.push({
-      label: ROAST_OPTIONS.find((o) => o.id === filters.roast)?.label ?? filters.roast,
-      clear: { roast: 'all' },
-    });
-  if (filters.serve !== 'all')
-    active.push({ label: filters.serve === 'hot' ? 'HOT' : 'ICE', clear: { serve: 'all' } });
+  const panelCount = (filters.dripper !== 'all' ? 1 : 0) + (filters.roast !== 'all' ? 1 : 0);
 
   return (
     <div className="space-y-2.5">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Icon
-            name="search"
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint"
-          />
+          <Icon name="search" size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint" />
           <input
             type="search"
             value={filters.query}
@@ -83,77 +71,58 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
             className="w-full rounded-xl border border-line bg-card py-2.5 pr-3 pl-9 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none"
           />
         </div>
-
-        <button
-          type="button"
-          aria-pressed={filters.favoritesOnly}
-          aria-label={`즐겨찾기만 보기 (${favoriteCount}개)`}
-          onClick={() => onChange({ favoritesOnly: !filters.favoritesOnly })}
-          className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${
-            filters.favoritesOnly
-              ? 'border-transparent bg-crema text-on-crema'
-              : 'border-line bg-card text-ink-soft hover:bg-well'
-          }`}
-        >
-          <Icon name="star" size={16} filled={filters.favoritesOnly} />
-          <span className="tabular-nums">{favoriteCount}</span>
-        </button>
-
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="filter-panel"
           className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${
-            open || active.length
-              ? 'border-crema bg-card text-crema'
-              : 'border-line bg-card text-ink-soft hover:bg-well'
+            open || panelCount ? 'border-crema bg-card text-crema' : 'border-line bg-card text-ink-soft hover:bg-well'
           }`}
         >
           <Icon name="filter" size={15} />
           필터
-          {active.length > 0 && <span className="tabular-nums">{active.length}</span>}
+          {panelCount > 0 && <span className="num">{panelCount}</span>}
         </button>
       </div>
 
-      {/* 접힌 상태에서 지금 걸린 조건 — 탭 한 번으로 해제 */}
-      {!open && active.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {active.map((chip) => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => onChange(chip.clear)}
-              className="flex items-center gap-1 rounded-full border border-crema/25 bg-crema-soft py-1 pr-2 pl-2.5 text-xs font-bold text-crema-deep hover:bg-crema-soft"
-            >
-              {chip.label}
-              <Icon name="close" size={12} />
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="scrollbar-hide -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5">
+        <button
+          type="button"
+          aria-pressed={filters.favoritesOnly}
+          aria-label={`즐겨찾기만 보기 (${favoriteCount}개)`}
+          onClick={() => onChange({ favoritesOnly: !filters.favoritesOnly })}
+          className={chipCls(filters.favoritesOnly)}
+        >
+          <Icon name="star" size={13} filled={filters.favoritesOnly} />
+          즐겨찾기
+          <span className="num">{favoriteCount}</span>
+        </button>
+        <button type="button" aria-pressed={filters.serve === 'hot'} onClick={() => onChange({ serve: filters.serve === 'hot' ? 'all' : 'hot' })} className={chipCls(filters.serve === 'hot')}>
+          HOT
+        </button>
+        <button type="button" aria-pressed={filters.serve === 'ice'} onClick={() => onChange({ serve: filters.serve === 'ice' ? 'all' : 'ice' })} className={chipCls(filters.serve === 'ice')}>
+          ICE
+        </button>
+        {/* 펼침 패널에서 건 조건 — 접힌 상태에서도 보이고, 탭 한 번으로 풀린다 */}
+        {filters.dripper !== 'all' && (
+          <button type="button" onClick={() => onChange({ dripper: 'all' })} className={chipCls(true)}>
+            {dripperLabel(filters.dripper)}
+            <Icon name="close" size={12} />
+          </button>
+        )}
+        {filters.roast !== 'all' && (
+          <button type="button" onClick={() => onChange({ roast: 'all' })} className={chipCls(true)}>
+            {ROAST_OPTIONS.find((o) => o.id === filters.roast)?.label ?? filters.roast}
+            <Icon name="close" size={12} />
+          </button>
+        )}
+      </div>
 
       {open && (
         <div id="filter-panel" className="space-y-3 rounded-xl border border-line bg-card p-3">
-          {filters.category === 'drip' && (
-            <Segmented
-              legend="Dripper"
-              options={DRIPPER_OPTIONS}
-              value={filters.dripper}
-              onSelect={(dripper) => onChange({ dripper })}
-            />
-          )}
+          <Segmented legend="Dripper" options={DRIPPER_OPTIONS} value={filters.dripper} onSelect={(dripper) => onChange({ dripper })} />
           <Segmented legend="Roast" options={ROAST_OPTIONS} value={filters.roast} onSelect={(roast) => onChange({ roast })} />
-          <Segmented
-            legend="Temperature"
-            options={[
-              { id: 'all' as const, label: '전체' },
-              { id: 'hot' as const, label: 'HOT' },
-              { id: 'ice' as const, label: 'ICE' },
-            ]}
-            value={filters.serve}
-            onSelect={(serve) => onChange({ serve })}
-          />
         </div>
       )}
     </div>

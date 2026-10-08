@@ -35,6 +35,18 @@ const paths: Record<string, JSX.Element> = {
     </>
   ),
   close: <path d="M18 6 6 18M6 6l12 12" />,
+  journal: (
+    <>
+      <path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2Z" />
+      <path d="M5 17a2 2 0 0 1 2-2h12M9 7h6M9 11h4" />
+    </>
+  ),
+  bean: (
+    <>
+      <path d="M7.5 4.5c3.5-2.5 8-1.5 10.5 1.5s2 8-1.5 11.5-8.5 4-11.5 1.5-2-8 2.5-14.5Z" />
+      <path d="M8 6c2.5 3 2.5 6 4 8.5s4 4 5.5 5" />
+    </>
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BrewLog, Recipe } from '../types';
-import { cumulativeWater, formatRatio, formatSec, servedVolumeG } from '../lib/brew';
+import { cumulativeWater, formatRatio, formatSec, isPouringStep, servedVolumeG } from '../lib/brew';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { BrewTimer } from './BrewTimer';
@@ -173,8 +173,10 @@ export function RecipeDetail({
                 <span className="w-12 shrink-0 num text-sm font-semibold text-ink-soft">
                   {step.atSec === null ? '—' : formatSec(step.atSec)}
                 </span>
-                {step.pour && describePour(step.pour) ? (
+                {describePour(step.pour) ? (
                   <PourGlyph pour={step.pour} size={60} />
+                ) : isPouringStep(step) ? (
+                  <PourGlyph pour={undefined} size={60} />
                 ) : (
                   <span className="w-[60px] shrink-0" aria-hidden="true" />
                 )}
@@ -200,6 +202,12 @@ export function RecipeDetail({
               </li>
             ))}
           </ol>
+          {recipe.steps.some((s) => isPouringStep(s) && !describePour(s.pour)) && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-ink-faint">
+              <Icon name="info" size={12} className="mt-0.5 shrink-0" />
+              흐린 그림은 기본 푸어오버 모습입니다 — 이 레시피는 그 단계의 붓는 방식을 정하지 않았습니다.
+            </p>
+          )}
           {recipe.pourSource && (
             <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-ink-faint">
               <Icon name="info" size={12} className="mt-0.5 shrink-0" />

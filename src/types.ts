@@ -116,7 +116,6 @@ export interface Recipe {
 
 /** 목록 화면의 필터 상태 */
 export interface Filters {
-  category: Category;
   roast: RoastLevel | 'all';
   serve: ServeTemp | 'all';
   dripper: DripperType | 'all';

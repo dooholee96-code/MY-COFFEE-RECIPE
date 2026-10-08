@@ -1,10 +1,11 @@
 import type { PourFlow, PourPattern, PourTechnique } from '../types';
-import { describePour, pourCycleSec } from '../lib/pour';
+import { GENERIC_POUR_LABEL, describePour, pourCycleSec } from '../lib/pour';
 import { useAnimatePours } from '../hooks/usePourMotion';
 import { ACTIVE_CHARACTER } from '../mascot';
 
 interface Props {
-  pour: PourTechnique;
+  /** 비어 있으면(정보 없음) 기본 푸어오버 그림 — 흐린 색으로, 레시피의 지시가 아님을 드러낸다 */
+  pour: PourTechnique | undefined;
   size?: number;
   /** false 면 항상 정지된 그림 */
   animate?: boolean;
@@ -72,8 +73,9 @@ function patternStart(pattern: PourPattern): [number, number] {
 export function PourGlyph({ pour, size = 72, animate = true, pov = false, paper = 'var(--color-card)', className = '' }: Props) {
   const allowMotion = useAnimatePours();
   const moving = animate && allowMotion;
-  const label = describePour(pour);
-  const width = pour.flow ? FLOW_WIDTH[pour.flow] : 3.4;
+  const generic = !describePour(pour);
+  const label = generic ? GENERIC_POUR_LABEL : describePour(pour);
+  const width = pour?.flow ? FLOW_WIDTH[pour.flow] : 3.4;
   const cycle = pourCycleSec(pour);
   const hands = pov ? ACTIVE_CHARACTER.Pov : undefined;
 
@@ -84,15 +86,16 @@ export function PourGlyph({ pour, size = 72, animate = true, pov = false, paper 
       height={size}
       role="img"
       aria-label={label}
-      className={`shrink-0 ${className}`}
-      data-pov={hands ? '' : undefined}
+      className={`shrink-0 ${generic ? 'opacity-60 saturate-50' : ''} ${className}`}
+      data-pov={hands && pour?.pattern ? '' : undefined}
+      data-generic={generic ? '' : undefined}
     >
-      {pour.pattern ? (
+      {pour?.pattern ? (
         <TopView pattern={pour.pattern} width={width} cycle={cycle} moving={moving} hands={hands} paper={paper} />
       ) : (
         <SideView width={width} cycle={cycle} moving={moving} />
       )}
-      {pour.agitation && <Agitation kind={pour.agitation} moving={moving} topView={Boolean(pour.pattern)} />}
+      {pour?.agitation && <Agitation kind={pour.agitation} moving={moving} topView={Boolean(pour.pattern)} />}
     </svg>
   );
 }

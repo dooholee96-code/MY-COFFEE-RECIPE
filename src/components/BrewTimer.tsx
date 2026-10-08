@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Recipe } from '../types';
-import { activeStepIndex, cumulativeWater, formatSec, isAutoPlayable } from '../lib/brew';
+import { activeStepIndex, cumulativeWater, formatSec, isAutoPlayable, isPouringStep } from '../lib/brew';
 import { useBrewTimer, useWakeLock } from '../hooks/useBrewTimer';
 import { beep, unlockAudio, vibrate } from '../lib/sound';
 import { Icon } from './Icon';
@@ -66,7 +66,7 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
    */
   const stage = (() => {
     if (step?.pour && describePour(step.pour)) {
-      return { key: `now-${current}`, pour: step.pour, heading: '지금 이렇게 부어요', sub: '', upcoming: false };
+      return { key: `now-${current}`, pour: step.pour, heading: '지금 이렇게 부어요', body: describePour(step.pour), sub: '', upcoming: false };
     }
     if (next?.pour && describePour(next.pour)) {
       const at = next.atSec !== null ? ` (${formatSec(next.atSec)})` : '';
@@ -74,9 +74,15 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
         key: `next-${current}`,
         pour: next.pour,
         heading: `${next.label}${at}부터 이렇게 부어요`,
+        body: describePour(next.pour),
         sub: secondsToNext !== null ? `${secondsToNext}초 후 시작` : '',
         upcoming: true,
       };
+    }
+    // 붓는 단계인데 레시피가 방식을 말하지 않는다 — 기본 모습을 보여주되 그 사실을 적는다.
+    // 데이터에는 아무것도 넣지 않는다: 원본이 말하지 않은 방식을 레시피에 적지 않는다는 규칙.
+    if (step && isPouringStep(step)) {
+      return { key: `generic-${current}`, pour: undefined, heading: '붓는 방식은 레시피에 없어요', body: '편한 대로 부으세요', sub: '', upcoming: false };
     }
     return null;
   })();
@@ -177,7 +183,7 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
                 {/* 한글이 음절 중간에서 끊기지 않게 어절 단위로 줄바꿈 */}
                 <div className="min-w-0 break-keep">
                   <p className={`text-xs font-bold ${stage.upcoming ? 'text-ink-faint' : 'text-crema'}`}>{stage.heading}</p>
-                  <p className="mt-1 text-lg leading-snug font-bold text-crema-deep">{describePour(stage.pour)}</p>
+                  <p className={`mt-1 text-lg leading-snug font-bold ${stage.pour ? 'text-crema-deep' : 'text-ink-soft'}`}>{stage.body}</p>
                   {stage.sub && <p className="mt-1 text-xs text-ink-faint">{stage.sub}</p>}
                 </div>
               </div>

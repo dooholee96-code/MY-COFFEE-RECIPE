@@ -53,7 +53,7 @@ export function GrindSetting({ settings, myGrinder, calibration, compact = false
         <span className="font-semibold text-ink">
           {myGrinder.name} {primary.converted.text}
         </span>
-        <span className="text-[11px] text-ink-faint">
+        <span className="text-xs text-ink-faint">
           ≈ {sourceName(primary)} {primary.source.setting}
         </span>
       </span>
@@ -70,16 +70,16 @@ export function GrindSetting({ settings, myGrinder, calibration, compact = false
           <span className="font-semibold text-ink">
             {myGrinder.name} <span className="num text-base">{c.converted.text}</span>
           </span>
-          <span className="text-[11px] font-normal text-ink-faint">
+          <span className="text-xs font-normal text-ink-faint">
             ← {sourceName(c)} {c.source.setting}
           </span>
           {c.converted.outOfRange && (
-            <span className="rounded border border-crema/25 bg-crema-soft px-1 text-[10px] font-bold text-crema-deep">범위 밖</span>
+            <span className="rounded border border-crema/25 bg-crema-soft px-1 text-[11px] font-bold text-crema-deep">범위 밖</span>
           )}
         </span>
       ))}
       {spread >= SPREAD_WARN && (
-        <span className="mt-1 max-w-[16rem] rounded-lg bg-crema-soft px-2.5 py-1.5 text-[11px] leading-snug font-normal text-ink-soft">
+        <span className="mt-1 max-w-[16rem] rounded-lg bg-crema-soft px-2.5 py-1.5 text-xs leading-snug font-normal text-ink-soft">
           원본의 두 그라인더 값이 환산하면 <b className="text-crema-deep">{spread}{unit}</b> 차이 납니다. 두 값 사이에서
           시작해 맛으로 맞추세요.
         </span>

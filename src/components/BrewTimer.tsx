@@ -6,6 +6,8 @@ import { beep, unlockAudio, vibrate } from '../lib/sound';
 import { Icon } from './Icon';
 import { PourGlyph } from './PourGlyph';
 import { describePour } from '../lib/pour';
+import { Mascot } from './Mascot';
+import { mascotPoseFor } from '../lib/mascot';
 
 interface Props {
   recipe: Recipe;
@@ -79,6 +81,8 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
     return null;
   })();
 
+  const pose = mascotPoseFor(status, step);
+
   const onStart = () => {
     unlockAudio();
     start();
@@ -91,30 +95,36 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
 
   return (
     <section className="rounded-2xl border border-line bg-well p-4" aria-label="브루잉 타이머">
-      {/* 시계 + 목표 투입량 */}
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold tracking-wider text-ink-faint uppercase">
-            {auto ? '경과' : '단계'}
-          </div>
-          <div role="timer" aria-live="off" className="num text-4xl font-bold tabular-nums text-ink">
+      {/* 시계 + 마스코트 + 목표 투입량 */}
+      <div className="flex items-end justify-between gap-2">
+        <div className="shrink-0">
+          <div className="text-[11px] font-bold tracking-wider text-ink-faint uppercase">{auto ? '경과' : '단계'}</div>
+          <div role="timer" aria-live="off" className="num text-[40px] leading-none font-bold tabular-nums text-ink">
             {auto ? formatSec(elapsed) : `${current + 1} / ${recipe.steps.length}`}
           </div>
-          {auto && <div className="mt-0.5 text-xs text-ink-faint">목표 {formatSec(recipe.totalSec)}</div>}
+          {auto && <div className="mt-1.5 text-xs text-ink-soft">목표 {formatSec(recipe.totalSec)}</div>}
         </div>
-        <div className="text-right">
-          <div className="text-xs font-semibold tracking-wider text-ink-faint uppercase">저울 목표</div>
-          <div className="num text-4xl font-bold tabular-nums text-crema">
+        {/* 바리스타 — 붓는 단계면 붓고, 뜸이면 지켜보고, 끝나면 잔을 든다. 일시정지면 멈춘다 */}
+        <Mascot
+          pose={pose}
+          moving={running || status === 'done'}
+          size={104}
+          paper="var(--color-well)"
+          className="mb-1 hidden min-[360px]:block text-ink-soft"
+        />
+        <div className="shrink-0 text-right">
+          <div className="text-[11px] font-bold tracking-wider text-ink-faint uppercase">저울 목표</div>
+          <div className="num text-[40px] leading-none font-bold tabular-nums text-crema">
             {target === null ? '—' : `${target}`}
             <span className="ml-0.5 text-lg font-semibold text-crema">g</span>
           </div>
-          <div className="mt-0.5 text-xs text-ink-faint">총 {recipe.waterG}g</div>
+          <div className="mt-1.5 text-xs text-ink-soft">총 {recipe.waterG}g</div>
         </div>
       </div>
 
       {/* 진행 바 */}
       {auto && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line" role="presentation">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-line" role="presentation">
           <div
             className={`h-full rounded-full transition-[width] duration-200 ${status === 'done' ? 'bg-sage' : 'bg-crema'}`}
             style={{ width: `${progress}%` }}
@@ -123,7 +133,7 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
       )}
 
       {/* 지금 할 일 — 화면을 흘끗 봤을 때 가장 먼저 읽혀야 하는 줄 */}
-      <div className="mt-4 min-h-[4.5rem] rounded-xl border border-line bg-card px-4 py-3">
+      <div className="mt-4 min-h-[4.5rem] rounded-xl bg-card px-4 py-3.5">
         {status === 'idle' && current < 0 ? (
           <p className="text-sm text-ink-soft">시작을 누르면 단계별로 안내합니다.</p>
         ) : status === 'done' ? (
@@ -141,22 +151,29 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
           </div>
         ) : step ? (
           <>
-            <p aria-live="polite" className="text-lg font-bold text-ink">
+            <p aria-live="polite" className="text-xl leading-tight font-bold text-ink">
               {step.label}
               {step.waterG !== null && step.waterG > 0 && <span className="ml-2 num text-crema">+{step.waterG}g</span>}
               {describePour(step.pour) && <span className="sr-only"> · {describePour(step.pour)}</span>}
             </p>
-            {step.hint && <p className="mt-0.5 text-sm text-ink-soft">{step.hint}</p>}
+            {step.hint && <p className="mt-1 text-sm leading-snug text-ink-soft">{step.hint}</p>}
             {auto && next && (
-              <p className="mt-1 text-xs text-ink-faint">
-                다음: {next.label}
-                {secondsToNext !== null && ` · ${secondsToNext}초 후`}
+              // 다음 단계까지 남은 시간 — 흘끗 볼 때 두 번째로 중요한 줄이라 흐리게 두지 않는다
+              <p className="mt-1.5 text-sm font-semibold text-ink-soft">
+                다음 {next.label}
+                {secondsToNext !== null && (
+                  <>
+                    {' · '}
+                    <span className="num text-ink">{secondsToNext}</span>초 후
+                  </>
+                )}
               </p>
             )}
             {stage && (
               // 붓는 방법 — 카드 폭을 다 써서 크게. 지금 단계의 것인지, 다가올 단계의 것인지 글로 분명히 적는다
               <div className="mt-3 flex items-center gap-4 border-t border-line pt-3">
-                <PourGlyph key={stage.key} pour={stage.pour} size={132} />
+                {/* 1인칭 — 내 손이 주전자를 들고 궤적을 따라간다 */}
+                <PourGlyph key={stage.key} pour={stage.pour} size={132} pov paper="var(--color-card)" />
                 {/* 한글이 음절 중간에서 끊기지 않게 어절 단위로 줄바꿈 */}
                 <div className="min-w-0 break-keep">
                   <p className={`text-xs font-bold ${stage.upcoming ? 'text-ink-faint' : 'text-crema'}`}>{stage.heading}</p>

@@ -1,12 +1,20 @@
 import type { PourFlow, PourPattern, PourTechnique } from '../types';
 import { describePour, pourCycleSec } from '../lib/pour';
 import { useAnimatePours } from '../hooks/usePourMotion';
+import { ACTIVE_CHARACTER } from '../mascot';
 
 interface Props {
   pour: PourTechnique;
   size?: number;
   /** false 면 항상 정지된 그림 */
   animate?: boolean;
+  /**
+   * 1인칭 — 마스코트의 손이 주전자를 들고 궤적을 따라간다 (캐릭터가 Pov 를 그릴 때만).
+   * 큰 그림(타이머 카드)에서만 켠다. 작은 단계표 그림에서는 손이 궤적을 가린다.
+   */
+  pov?: boolean;
+  /** 손 그림이 겹치는 선을 가릴 바탕색 */
+  paper?: string;
   className?: string;
 }
 
@@ -61,17 +69,26 @@ function patternStart(pattern: PourPattern): [number, number] {
  * - 굵기·속도만 있으면: 옆에서 본 모습. 주전자에서 물줄기와 물방울이 떨어진다.
  * 점·선의 굵기가 유량, 도는/떨어지는 속도가 붓는 속도다.
  */
-export function PourGlyph({ pour, size = 72, animate = true, className = '' }: Props) {
+export function PourGlyph({ pour, size = 72, animate = true, pov = false, paper = 'var(--color-card)', className = '' }: Props) {
   const allowMotion = useAnimatePours();
   const moving = animate && allowMotion;
   const label = describePour(pour);
   const width = pour.flow ? FLOW_WIDTH[pour.flow] : 3.4;
   const cycle = pourCycleSec(pour);
+  const hands = pov ? ACTIVE_CHARACTER.Pov : undefined;
 
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={label} className={`shrink-0 ${className}`}>
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      role="img"
+      aria-label={label}
+      className={`shrink-0 ${className}`}
+      data-pov={hands ? '' : undefined}
+    >
       {pour.pattern ? (
-        <TopView pattern={pour.pattern} width={width} cycle={cycle} moving={moving} />
+        <TopView pattern={pour.pattern} width={width} cycle={cycle} moving={moving} hands={hands} paper={paper} />
       ) : (
         <SideView width={width} cycle={cycle} moving={moving} />
       )}
@@ -91,7 +108,21 @@ function Ripple({ r0, r1, dur, begin = 0, moving }: { r0: number; r1: number; du
   );
 }
 
-function TopView({ pattern, width, cycle, moving }: { pattern: PourPattern; width: number; cycle: number; moving: boolean }) {
+function TopView({
+  pattern,
+  width,
+  cycle,
+  moving,
+  hands,
+  paper,
+}: {
+  pattern: PourPattern;
+  width: number;
+  cycle: number;
+  moving: boolean;
+  hands: NonNullable<typeof ACTIVE_CHARACTER.Pov> | undefined;
+  paper: string;
+}) {
   const d = patternPath(pattern);
   const dur = `${cycle}s`;
   const dot = width * 0.8 + 1.8;
@@ -132,27 +163,49 @@ function TopView({ pattern, width, cycle, moving }: { pattern: PourPattern; widt
         </>
       )}
 
+      {/* 1인칭 — 드리퍼 옆에 놓인 손 */}
+      {hands && (
+        <g className="text-ink-soft">
+          <hands.Rest paper={paper} />
+        </g>
+      )}
+
       {still ? (
         // 센터 푸어 / 가득 채우기 — 한 점에 부어 물결이 번진다
         <g transform={`translate(${C} ${C})`}>
           {!moving && [12, 22].map((r) => <circle key={r} r={r} fill="none" className="stroke-crema" strokeWidth={1.4} strokeOpacity={0.35} />)}
           <Ripple r0={dot} r1={28} dur={cycle / 1.5} moving={moving} />
           <Ripple r0={dot} r1={28} dur={cycle / 1.5} begin={cycle / 3} moving={moving} />
+          {hands && (
+            <g className="text-ink-soft">
+              <hands.Kettle paper={paper} />
+            </g>
+          )}
           <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.2} />
           <circle r={dot} className="fill-crema" />
         </g>
       ) : moving ? (
-        // 움직일 때는 점을 원점에 두고 animateMotion 이 궤적 좌표로 옮긴다 — 물결도 점을 따라간다
+        // 움직일 때는 점을 원점에 두고 animateMotion 이 궤적 좌표로 옮긴다 — 물결도, 주전자를 든 손도 점을 따라간다
         <g>
           <Ripple r0={dot} r1={dot * 3.4} dur={rippleDur} moving />
+          {hands && (
+            <g className="text-ink-soft">
+              <hands.Kettle paper={paper} />
+            </g>
+          )}
           <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.22} />
           <circle r={dot} className="fill-crema" />
           <animateMotion dur={dur} repeatCount="indefinite" path={d} />
         </g>
       ) : (
-        <g>
-          <circle cx={sx} cy={sy} r={dot * 1.9} className="fill-crema" fillOpacity={0.2} />
-          <circle cx={sx} cy={sy} r={dot} className="fill-crema" />
+        <g transform={`translate(${sx} ${sy})`}>
+          {hands && (
+            <g className="text-ink-soft">
+              <hands.Kettle paper={paper} />
+            </g>
+          )}
+          <circle r={dot * 1.9} className="fill-crema" fillOpacity={0.2} />
+          <circle r={dot} className="fill-crema" />
         </g>
       )}
     </g>

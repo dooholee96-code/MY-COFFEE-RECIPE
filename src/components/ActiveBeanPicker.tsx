@@ -30,7 +30,7 @@ export function ActiveBeanPicker({ beans, activeBeanId, onChange, myGrinder, fal
     <div className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-3 py-2">
       <Icon name="scale" size={15} className="shrink-0 text-crema" />
       <label className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold tracking-wider text-ink-faint uppercase">지금 쓰는 원두</span>
+        <span className="block text-[11px] font-bold tracking-wider text-ink-faint uppercase">지금 쓰는 원두</span>
         <select
           value={active?.id ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
@@ -48,9 +48,9 @@ export function ActiveBeanPicker({ beans, activeBeanId, onChange, myGrinder, fal
         <span className="shrink-0 text-right">
           <span className="block num text-sm font-bold text-ink">
             {anchor ?? fallbackAnchor ?? '—'}
-            <span className="ml-0.5 text-[10px] text-ink-faint">클릭</span>
+            <span className="ml-0.5 text-xs text-ink-faint">클릭</span>
           </span>
-          <span className="block text-[10px] text-ink-faint">
+          <span className="block text-xs text-ink-faint">
             {anchor !== null ? '이 원두 기준' : active ? '원두 기준 없음' : 'V60 기준'}
             {days !== null && ` · ${days}일차`}
           </span>

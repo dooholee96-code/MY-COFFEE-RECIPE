@@ -110,25 +110,25 @@ export function RecipeDetail({
           ].map((cell) => (
             <div
               key={cell.label}
-              className={`flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center ${cell.wide ? 'col-span-2' : ''}`}
+              className={`flex flex-col items-center gap-1 rounded-xl bg-well p-3 text-center ${cell.wide ? 'col-span-2' : ''}`}
             >
               <Icon name={cell.icon} size={16} className="text-ink-faint" />
-              <dt className="text-[11px] text-ink-faint">{cell.label}</dt>
+              <dt className="text-xs text-ink-faint">{cell.label}</dt>
               <dd
                 className={
                   cell.numeric
                     ? 'num text-lg leading-tight font-semibold text-ink'
-                    : 'text-[13px] leading-tight font-bold whitespace-pre-line text-ink'
+                    : 'text-sm leading-tight font-bold whitespace-pre-line text-ink'
                 }
               >
                 {cell.value}
               </dd>
             </div>
           ))}
-          <div className="col-span-2 flex flex-col items-center gap-1 rounded-xl border border-line bg-well p-3 text-center">
+          <div className="col-span-2 flex flex-col items-center gap-1 rounded-xl bg-well p-3 text-center">
             <Icon name="grinder" size={16} className="text-ink-faint" />
-            <dt className="text-[11px] text-ink-faint">분쇄도</dt>
-            <dd className="text-[13px] leading-tight font-bold text-ink">
+            <dt className="text-xs text-ink-faint">분쇄도</dt>
+            <dd className="text-sm leading-tight font-bold text-ink">
               <GrindSetting
                 settings={recipe.grinderSettings ?? []}
                 myGrinder={myGrinder}
@@ -137,7 +137,7 @@ export function RecipeDetail({
               />
             </dd>
             {myGrinder && myGrinder.id !== 'comandante' && (
-              <p className="mt-0.5 text-[10px] leading-snug text-ink-faint">
+              <p className="mt-0.5 text-xs leading-snug text-ink-faint">
                 환산값은 출발점입니다. 맛을 보고 보정하세요 — 설정에서 기준을 바꿀 수 있습니다.
               </p>
             )}
@@ -145,7 +145,7 @@ export function RecipeDetail({
         </dl>
 
         {recipe.note && (
-          <p className="flex items-start gap-2 rounded-xl border border-crema/25 bg-crema-soft px-4 py-3 text-sm leading-relaxed text-ink">
+          <p className="flex items-start gap-2 rounded-xl bg-crema-soft px-4 py-3 text-sm leading-relaxed text-ink">
             <span className="shrink-0 font-bold text-crema">Check!</span>
             {recipe.note}
           </p>
@@ -170,7 +170,7 @@ export function RecipeDetail({
                 key={i}
                 className="flex items-center gap-3 border-b border-line bg-well px-3 py-2.5 last:border-0"
               >
-                <span className="w-12 shrink-0 num text-xs font-semibold text-ink-faint">
+                <span className="w-12 shrink-0 num text-sm font-semibold text-ink-soft">
                   {step.atSec === null ? '—' : formatSec(step.atSec)}
                 </span>
                 {step.pour && describePour(step.pour) ? (
@@ -179,8 +179,8 @@ export function RecipeDetail({
                   <span className="w-[60px] shrink-0" aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="text-sm font-bold text-ink">{step.label}</span>
-                  {step.hint && <span className="ml-1.5 text-xs text-ink-faint">{step.hint}</span>}
+                  <span className="text-base font-bold text-ink">{step.label}</span>
+                  {step.hint && <span className="block text-xs leading-snug break-keep text-ink-soft">{step.hint}</span>}
                   {describePour(step.pour) && (
                     <span className="block text-xs font-semibold text-crema-deep">{describePour(step.pour)}</span>
                   )}
@@ -188,8 +188,8 @@ export function RecipeDetail({
                 <span className="shrink-0 text-right">
                   {step.waterG !== null && step.waterG > 0 ? (
                     <>
-                      <span className="num text-sm font-bold text-crema">+{step.waterG}g</span>
-                      <span className="ml-1.5 num text-[11px] text-ink-faint">
+                      <span className="num text-base font-bold text-crema">+{step.waterG}g</span>
+                      <span className="ml-1.5 num text-xs text-ink-soft">
                         {cumulative[i] === null ? '' : `→ ${cumulative[i]}g`}
                       </span>
                     </>
@@ -201,7 +201,7 @@ export function RecipeDetail({
             ))}
           </ol>
           {recipe.pourSource && (
-            <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-ink-faint">
+            <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-ink-faint">
               <Icon name="info" size={12} className="mt-0.5 shrink-0" />
               붓는 방식 출처: {recipe.pourSource}
             </p>
@@ -209,7 +209,7 @@ export function RecipeDetail({
         </section>
 
         {/* 마무리 */}
-        <section className="space-y-2 rounded-xl border border-dashed border-line p-4">
+        <section className="space-y-2 rounded-xl bg-well p-4">
           <h4 className="text-xs font-bold tracking-wider text-ink-soft uppercase">마무리</h4>
           <dl className="space-y-1.5 text-sm">
             <div className="flex justify-between gap-3">
@@ -349,14 +349,14 @@ function PastBrews({ logs, onOpenLog }: { logs: BrewLog[]; onOpenLog: (log: Brew
                 <span className="block text-xs font-semibold text-ink-soft">
                   {new Date(log.brewedAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
                 </span>
-                <span className="block truncate num text-[11px] text-ink-faint">
+                <span className="block truncate num text-xs text-ink-faint">
                   {log.beanG}g · {log.waterG}g
                   {log.actualSec !== undefined ? ` · ${formatSec(log.actualSec)}` : ''}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 {log.taste && (
-                  <span className="text-[10px] font-bold text-ink-faint">
+                  <span className="text-[11px] font-bold text-ink-faint">
                     {TASTE_OPTIONS.find((t) => t.id === log.taste)?.label}
                   </span>
                 )}

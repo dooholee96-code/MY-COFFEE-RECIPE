@@ -3,7 +3,7 @@ import { formatSec } from '../lib/brew';
 import { TASTE_OPTIONS, daysOffRoast } from '../lib/dialIn';
 import { Icon } from './Icon';
 import { StarRating } from './StarRating';
-import { PourOverArt } from './PourOverArt';
+import { Mascot } from './Mascot';
 
 interface Props {
   logs: BrewLog[];
@@ -30,7 +30,7 @@ export function LogsView({ logs, beans, onOpenRecipe, onEdit, onDelete }: Props)
   if (logs.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-        <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+        <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
         <p className="mt-3 font-semibold text-ink-soft">아직 기록이 없습니다.</p>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
           레시피를 열고 타이머로 내린 뒤 &quot;기록하기&quot;를 누르면 여기에 쌓입니다. 맛을 고르면 다음에
@@ -95,7 +95,7 @@ export function LogsView({ logs, beans, onOpenRecipe, onEdit, onDelete }: Props)
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
                     {log.rating !== undefined && <StarRating value={log.rating} size={15} />}
                     {taste && (
-                      <span className="rounded-full border border-line-strong bg-well px-2 py-0.5 text-[10px] font-bold text-ink-soft">
+                      <span className="rounded-full border border-line-strong bg-well px-2 py-0.5 text-[11px] font-bold text-ink-soft">
                         {taste.label}
                       </span>
                     )}

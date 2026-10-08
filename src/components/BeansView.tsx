@@ -5,7 +5,7 @@ import { roastLabel } from '../lib/labels';
 import { type GrinderProfile, beanAnchorFor } from '../lib/grinders';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
-import { PourOverArt } from './PourOverArt';
+import { Mascot } from './Mascot';
 
 interface Props {
   beans: Bean[];
@@ -76,17 +76,17 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           {bean.roastLevel && (
-            <span className="rounded-full border border-line-strong bg-well px-2 py-0.5 text-[10px] font-bold text-ink-soft">
+            <span className="rounded-full border border-line-strong bg-well px-2 py-0.5 text-[11px] font-bold text-ink-soft">
               {roastLabel(bean.roastLevel)}
             </span>
           )}
           {advice && (
-            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${toneClass[advice.tone]}`}>
+            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${toneClass[advice.tone]}`}>
               {advice.label}
             </span>
           )}
           {used > 0 && (
-            <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-bold text-ink-faint">
+            <span className="rounded-full border border-line px-2 py-0.5 text-[11px] font-bold text-ink-faint">
               {used}회 사용
             </span>
           )}
@@ -102,7 +102,7 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
             )}
           </p>
         )}
-        {lastGrind && <p className="mt-1.5 text-[11px] text-ink-faint">최근 기록: {lastGrind}</p>}
+        {lastGrind && <p className="mt-1.5 text-xs text-ink-faint">최근 기록: {lastGrind}</p>}
 
         {bean.notes && <p className="mt-2 text-xs leading-relaxed text-ink-soft">{bean.notes}</p>}
 
@@ -128,7 +128,7 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
     <>
       {beans.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-          <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+          <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
           <p className="mt-3 font-semibold text-ink-soft">등록된 원두가 없습니다.</p>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
             원두를 등록하면 로스팅 후 며칠째인지 계산해 주고, 추출 기록에 원두를 묶어 둘 수 있습니다.
@@ -279,7 +279,7 @@ function BeanForm({
         <div>
           <label className={labelCls} htmlFor="bf-date">로스팅 날짜</label>
           <input id="bf-date" type="date" className={`${field} mt-1`} value={roastedOn} onChange={(e) => setRoastedOn(e.target.value)} />
-          <p className="mt-1 text-[11px] text-ink-faint">며칠째인지 계산해 목록과 기록에 표시합니다.</p>
+          <p className="mt-1 text-xs text-ink-faint">며칠째인지 계산해 목록과 기록에 표시합니다.</p>
         </div>
         {myGrinder ? (
           <div>
@@ -294,13 +294,13 @@ function BeanForm({
               onChange={(e) => setAnchor(e.target.value)}
               placeholder={`비우면 기본값 (${myGrinder.v60Anchor})`}
             />
-            <p className="mt-1 text-[11px] leading-snug text-ink-faint">
+            <p className="mt-1 text-xs leading-snug text-ink-faint">
               이 원두로 V60 이 잘 나오는 클릭 수. 이 원두를 고르면 모든 레시피의 분쇄도가 이 값을 기준으로
               다시 환산됩니다.
             </p>
           </div>
         ) : (
-          <p className="text-[11px] text-ink-faint">설정에서 내 그라인더를 고르면 원두별 분쇄 기준을 저장할 수 있습니다.</p>
+          <p className="text-xs text-ink-faint">설정에서 내 그라인더를 고르면 원두별 분쇄 기준을 저장할 수 있습니다.</p>
         )}
 
         <div>

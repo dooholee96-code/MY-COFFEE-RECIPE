@@ -142,7 +142,7 @@ export function SettingsSheet({
               </button>
             ))}
           </div>
-          {profile && <p className="mt-2 text-[11px] text-ink-faint">{profile.note ?? `클릭당 약 ${profile.micronsPerClick}µm`}</p>}
+          {profile && <p className="mt-2 text-xs text-ink-faint">{profile.note ?? `클릭당 약 ${profile.micronsPerClick}µm`}</p>}
         </section>
 
         {/* 보정 — 환산을 믿으라고 하는 대신 직접 맞추게 한다 */}
@@ -226,7 +226,7 @@ export function SettingsSheet({
                 }`}
               >
                 <span className="block text-sm font-bold">{opt.label}</span>
-                <span className={`block text-[10px] ${theme === opt.id ? 'text-canvas/70' : 'text-ink-faint'}`}>{opt.hint}</span>
+                <span className={`block text-xs ${theme === opt.id ? 'text-canvas/70' : 'text-ink-faint'}`}>{opt.hint}</span>
               </button>
             ))}
           </div>

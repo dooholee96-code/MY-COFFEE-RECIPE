@@ -384,6 +384,28 @@ await step("기기의 '동작 줄이기'면 멈추고, 설정의 '항상 움직�
   await ctx.close();
 });
 
+await step('바리스타 토끼가 상태를 따라 자세를 바꾸고, 타이머 카드의 붓는 그림에는 1인칭 손이 나온다', async () => {
+  await page.getByRole('button', { name: '484 오리지널', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  const timer = d.locator('section[aria-label="브루잉 타이머"]');
+  await timer.locator('[data-mascot="idle"]').waitFor();
+  // 1인칭: 큰 그림에만 손이 있고, 단계표의 작은 그림에는 없다
+  if ((await timer.locator('svg[data-pov]').count()) !== 1) throw new Error('타이머 카드 그림에 1인칭 손이 없다');
+  if ((await d.locator('ol svg[data-pov]').count()) !== 0) throw new Error('단계표 그림에 손이 들어갔다');
+  await d.getByRole('button', { name: '시작' }).click();
+  await timer.locator('[data-mascot="pour"]').waitFor(); // 뜸 들이기 40g — 붓는 단계
+  // 마스코트 그림은 장식이라 스크린리더에서 숨긴다
+  if ((await timer.locator('[data-mascot] svg[aria-hidden="true"]').count()) !== 1) throw new Error('마스코트가 aria-hidden 이 아니다');
+  await d.getByRole('button', { name: '일시정지' }).click();
+  // 일시정지하면 그림이 멈춘다 (SMIL 요소가 없다)
+  if ((await timer.locator('[data-mascot] animate, [data-mascot] animateTransform').count()) !== 0) throw new Error('일시정지인데 마스코트가 움직인다');
+  await page.keyboard.press('Escape');
+  // 빈 화면(레시피가 없는 카테고리)에도 서 있다
+  await page.getByRole('button', { name: /^에스프레소/ }).click();
+  await page.locator('main [data-mascot="idle"]').waitFor();
+  await page.getByRole('button', { name: /^브루잉/ }).click();
+});
+
 await step('콘솔 에러가 없다', async () => {
   if (errors.length) throw new Error(errors.join(' | '));
 });

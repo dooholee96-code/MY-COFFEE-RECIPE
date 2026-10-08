@@ -76,7 +76,9 @@ src/
   lib/dialIn.ts         맛 판정 → 조정 제안, 디게싱 일수
   lib/grinders.ts       그라인더 사이 분쇄도 환산
   lib/pour.ts           붓는 방식 설명
+  lib/mascot.ts         타이머 상태 → 마스코트 자세
   lib/storage.ts        localStorage 래퍼
+  mascot/               바리스타 토끼 (자리표시 캐릭터, 교체 가능)
   hooks/useBrewTimer.ts 시각 기준 타이머, 화면 꺼짐 방지
   components/           UI
 scripts/smoke.mjs       브라우저 스모크 테스트 (단일 파일)

@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           저장된 데이터는 그대로 있습니다. 새로고침해도 똑같다면 저장된 데이터 중 하나가 깨진 것일 수 있습니다.
           아래에서 먼저 백업을 내려받은 뒤 초기화하세요.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-lg bg-well p-3 text-[11px] text-ink-faint">{this.state.error.message}</pre>
+        <pre className="mt-3 overflow-x-auto rounded-lg bg-well p-3 text-xs text-ink-faint">{this.state.error.message}</pre>
         <div className="mt-4 flex flex-col gap-2">
           <button type="button" onClick={() => location.reload()} className="rounded-xl bg-crema py-3 font-bold text-on-crema hover:bg-crema-deep">
             새로고침

@@ -66,6 +66,16 @@
 
   --color-scrim: rgb(40 25 15 / 0.42); /* 시트 뒤를 덮는 막 */
 
+  /*
+   * 글자 크기 — 폰에서 주전자를 든 채 읽는 화면이라 작은 단계를 한 눈금씩 키웠다.
+   * xs 13px(보조 설명·배지 본문), sm 15px(본문). 10px 는 쓰지 않는다. 11px 는 대문자 머리글(eyebrow)과
+   * 둥근 배지 라벨에만 쓴다.
+   */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4rem;
+
   --shadow-card: 0 1px 0 rgb(80 50 25 / 0.06), 0 10px 28px -16px rgb(80 50 25 / 0.35);
   --shadow-float: 0 10px 30px -8px rgb(80 50 25 / 0.45);
 }

@@ -37,7 +37,7 @@ import { LogsView } from './components/LogsView';
 import { logsForRecipe } from './lib/dialIn';
 import { type Calibration, calibrationForBean, findGrinder } from './lib/grinders';
 import { ActiveBeanPicker } from './components/ActiveBeanPicker';
-import { PourOverArt } from './components/PourOverArt';
+import { Mascot, MascotFace } from './components/Mascot';
 import { type ThemePref, applyTheme } from './lib/theme';
 import { type PourMotionPref, PourMotionContext } from './hooks/usePourMotion';
 
@@ -205,7 +205,7 @@ export default function App() {
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
           <div className="flex min-w-0 shrink-0 items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-ink text-canvas ring-4 ring-ink/10">
-              <Icon name="coffee" size={19} />
+              <MascotFace size={26} paper="var(--color-ink)" />
             </span>
             <div className="leading-none">
               <p className="eyebrow text-[9.5px]">Home Brew Bar</p>
@@ -270,10 +270,10 @@ export default function App() {
             >
               {v.label}
               {v.id === 'logs' && brewLogs.length > 0 && (
-                <span className="ml-1.5 num text-[11px] opacity-70">{brewLogs.length}</span>
+                <span className="ml-1.5 num text-xs opacity-70">{brewLogs.length}</span>
               )}
               {v.id === 'beans' && beans.filter((b) => !b.finished).length > 0 && (
-                <span className="ml-1.5 num text-[11px] opacity-70">{beans.filter((b) => !b.finished).length}</span>
+                <span className="ml-1.5 num text-xs opacity-70">{beans.filter((b) => !b.finished).length}</span>
               )}
             </button>
           ))}
@@ -323,14 +323,14 @@ export default function App() {
                 type="button"
                 aria-current={filters.category === cat.id ? 'page' : undefined}
                 onClick={() => openCategory(cat.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold whitespace-nowrap transition ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition ${
                   filters.category === cat.id
-                    ? 'border-transparent bg-ink text-canvas'
+                    ? 'border-crema/40 bg-crema-soft text-crema-deep'
                     : 'border-line bg-card text-ink-soft hover:bg-well hover:text-ink'
                 }`}
               >
                 {cat.label}
-                <span className={`num text-[11px] ${filters.category === cat.id ? 'text-canvas/70' : 'text-ink-faint'}`}>
+                <span className={`num text-xs ${filters.category === cat.id ? 'text-crema-deep/70' : 'text-ink-faint'}`}>
                   {count}
                 </span>
               </button>
@@ -350,12 +350,12 @@ export default function App() {
           />
         </div>
 
-        <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-line pb-2">
-          <div>
-            <p className="eyebrow">Today&apos;s Menu</p>
-            <h2 className="mt-0.5 text-xl font-bold text-ink">레시피</h2>
-          </div>
-          <p className="mb-0.5 text-sm text-ink-soft">
+        <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-bold text-ink">
+            <span className="eyebrow mr-2 align-middle">Menu</span>
+            {CATEGORIES.find((c) => c.id === filters.category)?.label}
+          </h2>
+          <p className="text-sm text-ink-soft">
             <span className="num font-bold text-ink">{visible.length}</span>개
           </p>
         </div>
@@ -488,7 +488,7 @@ function EmptyState({
 
   return (
     <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-      <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+      <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
       {filtered ? (
         <>
           <p className="mt-3 font-semibold text-ink-soft">조건에 맞는 레시피가 없습니다.</p>

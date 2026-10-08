@@ -149,7 +149,7 @@ export function BrewLogForm({
               </button>
             ))}
           </div>
-          {taste && <p className="mt-1.5 text-[11px] text-ink-faint">{TASTE_OPTIONS.find((o) => o.id === taste)?.hint}</p>}
+          {taste && <p className="mt-1.5 text-xs text-ink-faint">{TASTE_OPTIONS.find((o) => o.id === taste)?.hint}</p>}
         </section>
 
         {/* 조정 제안 — 기록하는 그 자리에서 다음 행동을 준다 */}
@@ -201,7 +201,7 @@ export function BrewLogForm({
                 );
               })}
             </select>
-            {beans.length === 0 && <p className="mt-1 text-[11px] text-ink-faint">원두 탭에서 원두를 등록하면 여기서 고를 수 있습니다.</p>}
+            {beans.length === 0 && <p className="mt-1 text-xs text-ink-faint">원두 탭에서 원두를 등록하면 여기서 고를 수 있습니다.</p>}
           </div>
 
           <div className="grid grid-cols-3 gap-2">

@@ -23,11 +23,11 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
     <article className="group relative flex flex-col rounded-2xl border border-line bg-card p-5 shadow-card transition-colors focus-within:border-crema hover:border-line-strong">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
-          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${roastBadgeClass(recipe.roast)}`}>
+          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${roastBadgeClass(recipe.roast)}`}>
             {roastLabel(recipe.roast)}
           </span>
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${
               recipe.serve === 'hot'
                 ? 'border-hot/25 bg-hot-soft text-hot'
                 : 'border-ice/25 bg-ice-soft text-ice'
@@ -36,7 +36,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
             {recipe.serve === 'hot' ? 'HOT' : 'ICE'}
           </span>
           {recipe.custom && (
-            <span className="rounded-full border border-sage/25 bg-sage-soft px-2 py-0.5 text-[10px] font-bold text-sage">
+            <span className="rounded-full border border-sage/25 bg-sage-soft px-2 py-0.5 text-[11px] font-bold text-sage">
               내 레시피
             </span>
           )}
@@ -54,7 +54,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
         </button>
       </div>
 
-      <h3 className="text-lg leading-snug font-bold text-ink">
+      <h3 className="text-[19px] leading-snug font-bold text-ink">
         <button
           type="button"
           onClick={onOpen}
@@ -66,34 +66,31 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
         </button>
       </h3>
 
-      <p className="mt-0.5 text-xs text-ink-faint">
+      <p className="mt-0.5 text-xs text-ink-soft">
         {[recipe.author && !recipe.title.includes(recipe.author) ? recipe.author : null, recipe.tag]
           .filter(Boolean)
           .join(' · ') || ' '}
       </p>
 
-      {/* 핵심 수치 — 저울에 올리기 전에 알아야 하는 것들 */}
-      <dl className="mt-4 grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-line bg-well text-center">
+      {/* 핵심 수치 — 저울에 올리기 전에 알아야 하는 것들. 테두리 없이 면 색만: 카드 안에 또 상자를 그리지 않는다 */}
+      <dl className="mt-4 grid grid-cols-4 rounded-xl bg-well py-2.5 text-center">
         {[
-          { icon: 'scale', label: '원두', value: `${recipe.beanG}g` },
-          { icon: 'droplet', label: '물', value: `${recipe.waterG}g` },
-          { icon: 'thermometer', label: '온도', value: `${recipe.tempC}℃` },
-          { icon: 'clock', label: '시간', value: formatSec(recipe.totalSec) },
+          { label: '원두', value: `${recipe.beanG}g` },
+          { label: '물', value: `${recipe.waterG}g` },
+          { label: '온도', value: `${recipe.tempC}℃` },
+          { label: '시간', value: formatSec(recipe.totalSec) },
         ].map((cell) => (
-          <div key={cell.label} className="bg-well px-1 py-2.5">
-            <dt className="flex items-center justify-center gap-1 text-[10px] text-ink-faint">
-              <Icon name={cell.icon as 'scale'} size={11} />
-              {cell.label}
-            </dt>
-            <dd className="mt-0.5 num text-sm font-bold text-ink">{cell.value}</dd>
+          <div key={cell.label} className="px-1">
+            <dt className="text-[11px] font-semibold text-ink-faint">{cell.label}</dt>
+            <dd className="mt-0.5 num text-base font-bold text-ink">{cell.value}</dd>
           </div>
         ))}
       </dl>
 
-      <div className="mt-3 space-y-1.5 text-xs text-ink-soft">
-        <p className="flex items-center gap-2">
-          <Icon name="grinder" size={13} className="shrink-0 text-crema" />
-          <span className="truncate">
+      <div className="mt-3 space-y-1.5 text-xs leading-snug text-ink-soft">
+        <p className="flex items-start gap-2">
+          <Icon name="grinder" size={13} className="mt-[3px] shrink-0 text-crema" />
+          <span className="min-w-0">
             <GrindSetting
               settings={recipe.grinderSettings ?? []}
               myGrinder={myGrinder}
@@ -119,7 +116,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
       </div>
 
       {recipe.note && (
-        <p className="mt-3 line-clamp-2 rounded-lg border border-crema/25 bg-crema-soft px-3 py-2 text-xs break-keep text-ink">
+        <p className="mt-3 line-clamp-2 rounded-lg bg-crema-soft px-3 py-2 text-xs leading-snug break-keep text-ink">
           {recipe.note}
         </p>
       )}

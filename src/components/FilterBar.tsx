@@ -78,7 +78,7 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
             type="search"
             value={filters.query}
             onChange={(e) => onChange({ query: e.target.value })}
-            placeholder="레시피, 작성자, 그라인더 세팅"
+            placeholder="레시피 검색"
             aria-label="레시피 검색"
             className="w-full rounded-xl border border-line bg-card py-2.5 pr-3 pl-9 text-sm text-ink placeholder:text-ink-faint/70 focus:border-crema focus:outline-none"
           />

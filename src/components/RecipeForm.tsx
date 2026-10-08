@@ -276,7 +276,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
         <div>
           <label className={labelCls} htmlFor="rf-grinder">그라인더 세팅</label>
           <input id="rf-grinder" className={`${field} mt-1`} value={grinderText} onChange={(e) => setGrinderText(e.target.value)} placeholder="코만단테 26~27 / EK43 13~14" />
-          <p className="mt-1 text-[11px] text-ink-faint">여러 그라인더는 / 로 구분합니다. Femobook A2 값을 적으면 환산 없이 그대로 보입니다.</p>
+          <p className="mt-1 text-xs text-ink-faint">여러 그라인더는 / 로 구분합니다. Femobook A2 값을 적으면 환산 없이 그대로 보입니다.</p>
         </div>
         <div>
           <label className={labelCls} htmlFor="rf-gear">추천 기구</label>
@@ -344,7 +344,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
                     {hasPour ? (
                       <PourGlyph pour={pour} size={56} />
                     ) : (
-                      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-[10px] leading-tight text-ink-faint" aria-hidden="true">
+                      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-[11px] leading-tight text-ink-faint" aria-hidden="true">
                         붓는
                         <br />
                         방법
@@ -359,7 +359,7 @@ export function RecipeForm({ initial, defaultCategory, onSave, onClose }: Props)
             <Icon name="plus" size={16} />
             단계 추가
           </button>
-          <p className="mt-2 text-[11px] text-ink-faint">
+          <p className="mt-2 text-xs text-ink-faint">
             시간을 비우면 시계로 자동 진행하지 않는 단계가 됩니다. 물 양을 비우면 &quot;눈대중&quot;으로 표시됩니다. 순서는 시각대로
             정리됩니다.
           </p>

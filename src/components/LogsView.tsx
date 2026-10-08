@@ -3,7 +3,7 @@ import { formatSec } from '../lib/brew';
 import { TASTE_OPTIONS, daysOffRoast } from '../lib/dialIn';
 import { Icon } from './Icon';
 import { StarRating } from './StarRating';
-import { PourOverArt } from './PourOverArt';
+import { ShiroBrewing } from './Shiro';
 
 interface Props {
   logs: BrewLog[];
@@ -29,8 +29,8 @@ const timeLabel = (iso: string) => {
 export function LogsView({ logs, beans, onOpenRecipe, onEdit, onDelete }: Props) {
   if (logs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-        <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+      <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+        <ShiroBrewing className="mx-auto h-32 w-40 text-ink-soft" />
         <p className="mt-3 font-semibold text-ink-soft">아직 기록이 없습니다.</p>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
           레시피를 열고 타이머로 내린 뒤 &quot;기록하기&quot;를 누르면 여기에 쌓입니다. 맛을 고르면 다음에

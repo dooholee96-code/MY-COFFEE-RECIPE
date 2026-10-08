@@ -113,11 +113,16 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
       </div>
 
       {/* 진행 바 */}
+      {/* 진행 바 — 시로가 지나간 길. 머리에 발자국이 따라간다 */}
       {auto && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line" role="presentation">
+        <div className="relative mt-4 mr-2 h-1.5 rounded-full bg-line" role="presentation">
           <div
             className={`h-full rounded-full transition-[width] duration-200 ${status === 'done' ? 'bg-sage' : 'bg-crema'}`}
             style={{ width: `${progress}%` }}
+          />
+          <span
+            className={`paw absolute -top-[5px] -ml-[7px] transition-[left] duration-200 ${status === 'done' ? 'text-sage' : 'text-crema'}`}
+            style={{ left: `${progress}%` }}
           />
         </div>
       )}

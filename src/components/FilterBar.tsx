@@ -91,11 +91,11 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
           onClick={() => onChange({ favoritesOnly: !filters.favoritesOnly })}
           className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${
             filters.favoritesOnly
-              ? 'border-transparent bg-crema text-on-crema'
+              ? 'border-transparent bg-ink text-canvas'
               : 'border-line bg-card text-ink-soft hover:bg-well'
           }`}
         >
-          <Icon name="star" size={16} filled={filters.favoritesOnly} />
+          <Icon name="carrot" size={16} filled className={filters.favoritesOnly ? 'text-carrot' : 'text-ink-faint'} />
           <span className="tabular-nums">{favoriteCount}</span>
         </button>
 

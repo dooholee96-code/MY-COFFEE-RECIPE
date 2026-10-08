@@ -20,7 +20,7 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
   return (
     // 카드 전체가 버튼이면 안쪽의 즐겨찾기 버튼을 넣을 수 없으므로,
     // 제목만 버튼으로 두고 카드를 그 버튼의 히트 영역으로 확장한다.
-    <article className="group relative flex flex-col rounded-2xl border border-line bg-card p-5 shadow-card transition-colors focus-within:border-crema hover:border-line-strong">
+    <article className="group relative flex flex-col rounded-[22px] border border-line bg-card p-5 shadow-card transition-colors focus-within:border-crema hover:border-line-strong">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
           <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${roastBadgeClass(recipe.roast)}`}>
@@ -47,10 +47,11 @@ export function RecipeCard({ recipe, favorite, onOpen, onToggleFavorite, myGrind
           aria-pressed={favorite}
           aria-label={`${recipe.title} 즐겨찾기 ${favorite ? '해제' : '추가'}`}
           className={`relative z-10 -m-1.5 rounded-lg p-1.5 transition-colors ${
-            favorite ? 'text-crema' : 'text-ink-faint hover:text-ink-soft'
+            favorite ? 'animate-hop text-carrot' : 'text-ink-faint hover:text-ink-soft'
           }`}
         >
-          <Icon name="star" size={18} filled={favorite} />
+          {/* 당근 = 즐겨찾기. 연표에서 켜진 칸에 당근이 놓이는 것과 같은 말 */}
+          <Icon name="carrot" size={18} filled={favorite} />
         </button>
       </div>
 

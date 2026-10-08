@@ -37,8 +37,8 @@ import { LogsView } from './components/LogsView';
 import { logsForRecipe } from './lib/dialIn';
 import { type Calibration, calibrationForBean, findGrinder } from './lib/grinders';
 import { ActiveBeanPicker } from './components/ActiveBeanPicker';
-import { PourOverArt } from './components/PourOverArt';
-import { type ThemePref, applyTheme } from './lib/theme';
+import { ShiroBrewing, ShiroFace } from './components/Shiro';
+import { DEFAULT_THEME, type ThemePref, applyTheme } from './lib/theme';
 import { type PourMotionPref, PourMotionContext } from './hooks/usePourMotion';
 
 type Sheet =
@@ -80,7 +80,7 @@ export default function App() {
   const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
 
   const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
-  const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, 'auto');
+  const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, DEFAULT_THEME);
   const [pourMotion, setPourMotion] = usePersistentState<PourMotionPref>(KEYS.pourMotion, 'auto');
   useEffect(() => applyTheme(theme), [theme]);
 
@@ -203,13 +203,12 @@ export default function App() {
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
-          <div className="flex min-w-0 shrink-0 items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ink text-canvas ring-4 ring-ink/10">
-              <Icon name="coffee" size={19} />
-            </span>
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+            {/* 시로 — 빅 히스토리 연표와 같은 자리, 같은 얼굴 */}
+            <ShiroFace size={40} className="shrink-0 drop-shadow-[0_2px_3px_rgb(58_42_36_/_0.18)]" />
             <div className="leading-none">
               <p className="eyebrow text-[9.5px]">Home Brew Bar</p>
-              <h1 className="mt-1 font-display text-[21px] font-semibold tracking-tight text-ink">My Coffee Recipe</h1>
+              <h1 className="hand mt-0.5 text-[24px] leading-none tracking-tight text-ink">My Coffee Recipe</h1>
             </div>
           </div>
           <button
@@ -257,14 +256,14 @@ export default function App() {
 
       {/* 최상위 화면 전환 */}
       <div className="mx-auto max-w-4xl px-5 pt-4">
-        <nav aria-label="화면" className="flex gap-1 rounded-xl border border-line bg-card p-1">
+        <nav aria-label="화면" className="flex gap-1 rounded-full border border-line bg-card p-1 shadow-card">
           {VIEWS.map((v) => (
             <button
               key={v.id}
               type="button"
               aria-current={view === v.id ? 'page' : undefined}
               onClick={() => setView(v.id)}
-              className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
+              className={`hand flex-1 rounded-full py-2 text-[17px] leading-none transition ${
                 view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:bg-well hover:text-ink'
               }`}
             >
@@ -325,12 +324,14 @@ export default function App() {
                 onClick={() => openCategory(cat.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold whitespace-nowrap transition ${
                   filters.category === cat.id
-                    ? 'border-transparent bg-ink text-canvas'
-                    : 'border-line bg-card text-ink-soft hover:bg-well hover:text-ink'
+                    ? 'border-transparent bg-card text-ink shadow-card'
+                    : 'border-dashed border-line-strong bg-transparent text-ink-soft hover:bg-card hover:text-ink'
                 }`}
               >
+                {/* 당근이 놓인 칸이 켜진 카테고리 — 연표의 카테고리 고르기와 같은 규칙 */}
+                {filters.category === cat.id && <Icon name="carrot" size={14} filled className="-ml-1 text-carrot" />}
                 {cat.label}
-                <span className={`num text-[11px] ${filters.category === cat.id ? 'text-canvas/70' : 'text-ink-faint'}`}>
+                <span className={`num text-[11px] ${filters.category === cat.id ? 'text-ink-soft' : 'text-ink-faint'}`}>
                   {count}
                 </span>
               </button>
@@ -350,10 +351,13 @@ export default function App() {
           />
         </div>
 
-        <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-line pb-2">
-          <div>
-            <p className="eyebrow">Today&apos;s Menu</p>
-            <h2 className="mt-0.5 text-xl font-bold text-ink">레시피</h2>
+        <div className="mt-7 mb-4 flex items-end justify-between gap-3 border-b border-dashed border-line-strong pb-2">
+          <div className="flex items-start gap-3">
+            <span className="ear-mark" aria-hidden="true" />
+            <div>
+              <p className="eyebrow">Today&apos;s Menu</p>
+              <h2 className="hand mt-0.5 text-[26px] leading-none text-ink">레시피</h2>
+            </div>
           </div>
           <p className="mb-0.5 text-sm text-ink-soft">
             <span className="num font-bold text-ink">{visible.length}</span>개
@@ -389,7 +393,7 @@ export default function App() {
         type="button"
         hidden={view !== 'recipes'}
         onClick={() => setSheet({ kind: 'form', id: null })}
-        className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-crema px-5 py-3.5 font-bold text-on-crema shadow-float transition hover:bg-crema-deep"
+        className="fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full bg-ink px-5 py-3.5 font-bold text-canvas shadow-float transition hover:opacity-90"
       >
         <Icon name="plus" size={18} />
         레시피 추가
@@ -487,8 +491,8 @@ function EmptyState({
   const label = CATEGORIES.find((c) => c.id === category)?.label ?? category;
 
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-      <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+    <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+      <ShiroBrewing className="mx-auto h-32 w-40 text-ink-soft" />
       {filtered ? (
         <>
           <p className="mt-3 font-semibold text-ink-soft">조건에 맞는 레시피가 없습니다.</p>

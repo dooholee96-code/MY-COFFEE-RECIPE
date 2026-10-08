@@ -5,7 +5,7 @@ import { roastLabel } from '../lib/labels';
 import { type GrinderProfile, beanAnchorFor } from '../lib/grinders';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
-import { PourOverArt } from './PourOverArt';
+import { ShiroBrewing } from './Shiro';
 
 interface Props {
   beans: Bean[];
@@ -127,8 +127,8 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
   return (
     <>
       {beans.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-          <PourOverArt className="mx-auto h-24 w-24 text-line-strong" />
+        <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+          <ShiroBrewing className="mx-auto h-32 w-40 text-ink-soft" />
           <p className="mt-3 font-semibold text-ink-soft">등록된 원두가 없습니다.</p>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
             원두를 등록하면 로스팅 후 며칠째인지 계산해 주고, 추출 기록에 원두를 묶어 둘 수 있습니다.
@@ -242,7 +242,7 @@ function BeanForm({
   return (
     <Modal open onClose={onClose} label={initial ? '원두 수정' : '원두 등록'}>
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-5 py-4">
-        <h2 className="text-lg font-bold text-ink">{initial ? '원두 수정' : '원두 등록'}</h2>
+        <h2 className="hand text-[22px] leading-none text-ink">{initial ? '원두 수정' : '원두 등록'}</h2>
         <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full bg-well p-2 text-ink-soft hover:bg-line">
           <Icon name="close" size={18} />
         </button>

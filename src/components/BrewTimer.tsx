@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Recipe } from '../types';
-import { activeStepIndex, cumulativeWater, formatSec, isAutoPlayable, isPouringStep } from '../lib/brew';
+import { activeStepIndex, cumulativeWater, formatSec, isAutoPlayable, isPouringStep, stepJumpTargets } from '../lib/brew';
 import { useBrewTimer, useWakeLock } from '../hooks/useBrewTimer';
 import { beep, unlockAudio, vibrate } from '../lib/sound';
 import { Icon } from './Icon';
@@ -25,9 +25,12 @@ interface Props {
  * 수위를 보며 붓는 레시피(안스타 초대용량)는 시계로 진행할 수 없으므로
  * "다음 단계" 버튼으로 직접 넘기는 수동 모드가 된다.
  */
+const skipCls =
+  'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-well text-ink transition hover:bg-line disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint/60';
+
 export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
   const auto = isAutoPlayable(recipe);
-  const { status, elapsed, start, pause, reset } = useBrewTimer(recipe.totalSec);
+  const { status, elapsed, start, pause, reset, seek } = useBrewTimer(recipe.totalSec);
   const [manualStep, setManualStep] = useState(0);
   const cumulative = cumulativeWater(recipe.steps);
 
@@ -89,14 +92,25 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
 
   const pose = mascotPoseFor(status, step);
 
+  /** 단계 건너뛰기 — 시계 모드는 시각으로, 수동 모드는 차례로 */
+  const jump = auto
+    ? stepJumpTargets(recipe.steps, elapsed)
+    : { prev: current > 0 ? current - 1 : null, next: current < recipe.steps.length - 1 ? current + 1 : null };
+  const goPrev = () => {
+    if (jump.prev === null) return;
+    if (auto) seek(jump.prev);
+    else setManualStep(jump.prev);
+  };
+  const goNext = () => {
+    if (jump.next === null) return;
+    unlockAudio();
+    if (auto) seek(jump.next);
+    else setManualStep(jump.next);
+  };
+
   const onStart = () => {
     unlockAudio();
     start();
-  };
-
-  const onManualNext = () => {
-    unlockAudio();
-    setManualStep((i) => Math.min(recipe.steps.length - 1, i + 1));
   };
 
   return (
@@ -128,12 +142,16 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
         </div>
       </div>
 
-      {/* 진행 바 */}
+      {/* 진행 바 — 시로가 지나간 길. 머리에 발자국이 따라간다 */}
       {auto && (
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-line" role="presentation">
+        <div className="relative mt-4 mr-2 h-2 rounded-full bg-line" role="presentation">
           <div
             className={`h-full rounded-full transition-[width] duration-200 ${status === 'done' ? 'bg-sage' : 'bg-crema'}`}
             style={{ width: `${progress}%` }}
+          />
+          <span
+            className={`paw absolute -top-[3px] -ml-[7px] transition-[left] duration-200 ${status === 'done' ? 'text-sage' : 'text-crema'}`}
+            style={{ left: `${progress}%` }}
           />
         </div>
       )}
@@ -192,49 +210,58 @@ export function BrewTimer({ recipe, soundOn, onLogBrew }: Props) {
         ) : null}
       </div>
 
-      {/* 조작부 */}
+      {/* 조작부 — 가운데가 주 행동, 양옆이 이전/다음 단계. 손이 젖어도 누를 수 있게 44px 이상 */}
       <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={jump.prev === null}
+          aria-label="이전 단계"
+          title="이전 단계"
+          className={skipCls}
+        >
+          <Icon name="skipBack" size={18} />
+        </button>
         {auto ? (
-          <>
-            <button
-              type="button"
-              onClick={running ? pause : onStart}
-              disabled={status === 'done'}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-crema py-3 font-bold text-on-crema transition hover:bg-crema-deep disabled:cursor-not-allowed disabled:bg-well disabled:text-ink-faint"
-            >
-              <Icon name={running ? 'pause' : 'play'} size={18} />
-              {running ? '일시정지' : status === 'paused' ? '계속' : '시작'}
-            </button>
-            <button
-              type="button"
-              onClick={reset}
-              className="flex items-center justify-center gap-2 rounded-xl border border-line-strong bg-well px-4 py-3 font-bold text-ink transition hover:bg-line"
-            >
-              <Icon name="reset" size={18} />
-              <span className="sr-only sm:not-sr-only">초기화</span>
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={running ? pause : onStart}
+            disabled={status === 'done'}
+            className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-crema py-3 font-bold text-on-crema transition hover:bg-crema-deep disabled:cursor-not-allowed disabled:bg-well disabled:text-ink-faint"
+          >
+            <Icon name={running ? 'pause' : 'play'} size={18} />
+            {running ? '일시정지' : status === 'paused' ? '계속' : '시작'}
+          </button>
         ) : (
-          <>
-            <button
-              type="button"
-              onClick={onManualNext}
-              disabled={current >= recipe.steps.length - 1}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-crema py-3 font-bold text-on-crema transition hover:bg-crema-deep disabled:cursor-not-allowed disabled:bg-well disabled:text-ink-faint"
-            >
-              <Icon name="play" size={18} />
-              {current >= recipe.steps.length - 1 ? '마지막 단계' : '다음 단계'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setManualStep(0)}
-              className="flex items-center justify-center gap-2 rounded-xl border border-line-strong bg-well px-4 py-3 font-bold text-ink transition hover:bg-line"
-            >
-              <Icon name="reset" size={18} />
-              <span className="sr-only sm:not-sr-only">처음으로</span>
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={jump.next === null}
+            className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-crema py-3 font-bold text-on-crema transition hover:bg-crema-deep disabled:cursor-not-allowed disabled:bg-well disabled:text-ink-faint"
+          >
+            <Icon name="play" size={18} />
+            {jump.next === null ? '마지막 단계' : '다음 단계'}
+          </button>
         )}
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={jump.next === null}
+          aria-label="다음 단계"
+          title="다음 단계"
+          className={skipCls}
+        >
+          <Icon name="skipForward" size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={auto ? reset : () => setManualStep(0)}
+          aria-label={auto ? '초기화' : '처음으로'}
+          title={auto ? '초기화' : '처음으로'}
+          className={skipCls}
+        >
+          <Icon name="reset" size={18} />
+        </button>
       </div>
 
       {status !== 'done' && (

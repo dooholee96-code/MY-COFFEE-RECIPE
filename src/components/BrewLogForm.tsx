@@ -120,7 +120,7 @@ export function BrewLogForm({
     <Modal open onClose={onClose} label="추출 기록">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-bold text-ink">{existing ? '기록 수정' : '추출 기록'}</h2>
+          <h2 className="hand truncate text-[22px] leading-none text-ink">{existing ? '기록 수정' : '추출 기록'}</h2>
           <p className="truncate text-xs text-ink-faint">{recipe.title}</p>
         </div>
         <button type="button" onClick={onClose} aria-label="닫기" className="shrink-0 rounded-full bg-well p-2 text-ink-soft hover:bg-line">

@@ -57,7 +57,27 @@ export function useBrewTimer(totalSec: number) {
     setStatus('idle');
   }, []);
 
-  return { status, elapsed, start, pause, reset };
+  /**
+   * 경과 시간을 특정 초로 옮긴다 — 단계를 건너뛰거나 되돌릴 때.
+   * 돌고 있으면 그대로 돈다(기준 시각만 다시 잡는다). 멈춰 있거나 끝났으면 일시정지 상태로 그 시각에 선다 —
+   * 끝난 뒤 이전 단계로 돌아가면 다시 '계속'을 누를 수 있어야 하므로.
+   */
+  const seek = useCallback(
+    (sec: number) => {
+      const target = Math.max(0, Math.min(totalSec, sec));
+      accumulated.current = target;
+      if (status === 'running') {
+        startedAt.current = Date.now();
+      } else {
+        startedAt.current = null;
+        setStatus('paused');
+      }
+      setElapsed(target);
+    },
+    [status, totalSec],
+  );
+
+  return { status, elapsed, start, pause, reset, seek };
 }
 
 /**

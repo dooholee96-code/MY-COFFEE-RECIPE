@@ -127,8 +127,8 @@ export function BeansView({ beans, logs, myGrinder, activeBeanId, onActivate, on
   return (
     <>
       {beans.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-          <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
+        <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+          <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-soft" />
           <p className="mt-3 font-semibold text-ink-soft">등록된 원두가 없습니다.</p>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-faint">
             원두를 등록하면 로스팅 후 며칠째인지 계산해 주고, 추출 기록에 원두를 묶어 둘 수 있습니다.

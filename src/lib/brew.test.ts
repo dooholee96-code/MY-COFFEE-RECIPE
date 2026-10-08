@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeStepIndex,
+  stepJumpTargets,
   brewRatio,
   cumulativeWater,
   formatRatio,
@@ -115,5 +116,39 @@ describe('sortSteps', () => {
       { atSec: 0, waterG: 0, label: '교반' },
     ]);
     expect(got.map((s) => s.label)).toEqual(['붓기', '교반']);
+  });
+});
+
+describe('stepJumpTargets', () => {
+  const steps: BrewStep[] = [
+    { atSec: 0, waterG: 40, label: '뜸' },
+    { atSec: 45, waterG: 60, label: '1차' },
+    { atSec: 90, waterG: 60, label: '2차' },
+    { atSec: 150, waterG: 0, label: '종료' },
+  ];
+
+  it('다음은 지금 시각보다 뒤에 시작하는 첫 단계', () => {
+    expect(stepJumpTargets(steps, 0).next).toBe(45);
+    expect(stepJumpTargets(steps, 44.9).next).toBe(45);
+    expect(stepJumpTargets(steps, 45).next).toBe(90);
+    expect(stepJumpTargets(steps, 150).next).toBeNull();
+  });
+
+  it('이전은 지금 단계의 시작으로, 막 넘어왔으면 그 앞 단계로', () => {
+    expect(stepJumpTargets(steps, 60).prev).toBe(45); // 1차 한가운데 → 1차 시작
+    expect(stepJumpTargets(steps, 46).prev).toBe(0); // 1차 시작 1초 뒤 → 뜸으로
+    expect(stepJumpTargets(steps, 91).prev).toBe(45);
+    expect(stepJumpTargets(steps, 0).prev).toBeNull(); // 처음에서는 갈 곳이 없다
+    expect(stepJumpTargets(steps, 1).prev).toBeNull();
+    expect(stepJumpTargets(steps, 20).prev).toBe(0);
+  });
+
+  it('시계에 매이지 않은 단계는 건너뛴다', () => {
+    const loose: BrewStep[] = [
+      { atSec: 0, waterG: 40, label: '뜸' },
+      { atSec: null, waterG: null, label: '수위까지' },
+      { atSec: 120, waterG: 0, label: '종료' },
+    ];
+    expect(stepJumpTargets(loose, 10)).toEqual({ prev: 0, next: 120 });
   });
 });

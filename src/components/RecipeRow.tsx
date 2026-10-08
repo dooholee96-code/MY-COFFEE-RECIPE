@@ -58,9 +58,10 @@ export function RecipeRow({ recipe, favorite, onOpen, onToggleFavorite, myGrinde
         onClick={onToggleFavorite}
         aria-pressed={favorite}
         aria-label={`${recipe.title} 즐겨찾기 ${favorite ? '해제' : '추가'}`}
-        className={`relative z-10 -mr-2 -mt-1 rounded-lg p-2 transition-colors ${favorite ? 'text-crema' : 'text-ink-faint hover:text-ink-soft'}`}
+        className={`relative z-10 -mr-2 -mt-1 rounded-lg p-2 transition-colors ${favorite ? 'animate-hop text-carrot' : 'text-ink-faint hover:text-ink-soft'}`}
       >
-        <Icon name="star" size={20} filled={favorite} />
+        {/* 당근 = 즐겨찾기. 연표에서 켜진 칸에 당근이 놓이는 것과 같은 말 */}
+        <Icon name="carrot" size={20} filled={favorite} />
       </button>
     </article>
   );

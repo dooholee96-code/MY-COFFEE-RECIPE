@@ -36,7 +36,7 @@ export function BottomNav({ view, onChange, counts }: Props) {
               type="button"
               aria-current={active ? 'page' : undefined}
               onClick={() => onChange(t.id)}
-              className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-xs font-bold transition ${
+              className={`hand flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[15px] leading-none transition ${
                 active ? 'text-ink' : 'text-ink-faint hover:text-ink-soft'
               }`}
             >

@@ -94,7 +94,8 @@ export function FilterBar({ filters, onChange, favoriteCount }: Props) {
           onClick={() => onChange({ favoritesOnly: !filters.favoritesOnly })}
           className={chipCls(filters.favoritesOnly)}
         >
-          <Icon name="star" size={13} filled={filters.favoritesOnly} />
+          {/* 당근 = 즐겨찾기. 연표에서 켜진 칸에 당근이 놓이는 것과 같은 말 */}
+          <Icon name="carrot" size={14} filled className={filters.favoritesOnly ? 'text-carrot' : 'text-ink-faint'} />
           즐겨찾기
           <span className="num">{favoriteCount}</span>
         </button>

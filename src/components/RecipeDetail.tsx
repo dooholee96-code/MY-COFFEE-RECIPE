@@ -79,9 +79,9 @@ export function RecipeDetail({
             onClick={onToggleFavorite}
             aria-pressed={favorite}
             aria-label={`즐겨찾기 ${favorite ? '해제' : '추가'}`}
-            className={`rounded-full bg-card/70 p-2 transition hover:bg-card ${favorite ? 'text-crema' : 'text-ink-soft'}`}
+            className={`rounded-full bg-card/70 p-2 transition hover:bg-card ${favorite ? 'text-carrot' : 'text-ink-soft'}`}
           >
-            <Icon name="star" size={18} filled={favorite} />
+            <Icon name="carrot" size={18} filled={favorite} />
           </button>
           <button
             type="button"
@@ -161,7 +161,7 @@ export function RecipeDetail({
         {/* 단계표 — 타이머와 같은 데이터를 훑어볼 수 있게 */}
         <section>
           <h4 className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-ink-soft uppercase">
-            <Icon name="clock" size={14} className="text-crema" />
+            <Icon name="paw" size={14} filled className="text-crema" />
             추출 단계
           </h4>
           <ol className="overflow-hidden rounded-xl border border-line">

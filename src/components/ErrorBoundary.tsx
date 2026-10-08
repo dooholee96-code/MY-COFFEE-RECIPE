@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="mx-auto max-w-md px-5 py-14 text-ink">
         <p className="eyebrow">Something went wrong</p>
-        <h1 className="mt-1 text-xl font-bold">화면을 그리다 멈췄습니다</h1>
+        <h1 className="hand mt-1 text-[24px] leading-tight">화면을 그리다 멈췄습니다</h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-soft">
           저장된 데이터는 그대로 있습니다. 새로고침해도 똑같다면 저장된 데이터 중 하나가 깨진 것일 수 있습니다.
           아래에서 먼저 백업을 내려받은 뒤 초기화하세요.

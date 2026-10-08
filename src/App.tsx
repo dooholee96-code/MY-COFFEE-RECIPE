@@ -38,7 +38,7 @@ import { logsForRecipe } from './lib/dialIn';
 import { type Calibration, calibrationForBean, findGrinder } from './lib/grinders';
 import { ActiveBeanPicker } from './components/ActiveBeanPicker';
 import { Mascot, MascotFace } from './components/Mascot';
-import { type ThemePref, applyTheme } from './lib/theme';
+import { DEFAULT_THEME, type ThemePref, applyTheme } from './lib/theme';
 import { type PourMotionPref, PourMotionContext } from './hooks/usePourMotion';
 
 type Sheet =
@@ -71,7 +71,7 @@ export default function App() {
   const [calibration, setCalibration] = usePersistentState<Calibration>(KEYS.grinderCalibration, {});
 
   const [activeBeanId, setActiveBeanId] = usePersistentState<string | null>(KEYS.activeBean, null);
-  const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, 'auto');
+  const [theme, setTheme] = usePersistentState<ThemePref>(KEYS.theme, DEFAULT_THEME);
   const [pourMotion, setPourMotion] = usePersistentState<PourMotionPref>(KEYS.pourMotion, 'auto');
   useEffect(() => applyTheme(theme), [theme]);
 
@@ -193,13 +193,12 @@ export default function App() {
     <div className="min-h-screen pb-32">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3.5">
-          <div className="flex min-w-0 shrink-0 items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ink text-canvas ring-4 ring-ink/10">
-              <MascotFace size={26} paper="var(--color-ink)" />
-            </span>
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+            {/* 시로 — 빅 히스토리 연표와 같은 자리, 같은 얼굴 */}
+            <MascotFace size={40} className="drop-shadow-[0_2px_3px_rgb(58_42_36_/_0.18)]" />
             <div className="leading-none">
               <p className="eyebrow text-[9.5px]">Home Brew Bar</p>
-              <h1 className="mt-1 font-display text-[21px] font-semibold tracking-tight text-ink">My Coffee Recipe</h1>
+              <h1 className="hand mt-0.5 text-[24px] leading-none tracking-tight text-ink">My Coffee Recipe</h1>
             </div>
           </div>
           <button
@@ -293,7 +292,7 @@ export default function App() {
         {/* 최근 내린 레시피 — 한 번 탭으로 상세·타이머까지 */}
         {recent.length > 0 && (
           <section aria-label="최근 내린 레시피" className="mt-5">
-            <h2 className="eyebrow mb-2">최근 내린</h2>
+            <h2 className="hand mb-2 text-[20px] leading-none text-ink">최근 내린</h2>
             <div className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5">
               {recent.map((r) => (
                 <button
@@ -315,8 +314,12 @@ export default function App() {
           <div className="mt-5 space-y-6">
             {groups.map((g) => (
               <section key={g.category} aria-label={g.label}>
-                <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-                  <h2 className="text-base font-bold text-ink">{g.label}</h2>
+                <div className="mb-2 flex items-end justify-between gap-3 px-1">
+                  {/* 귀 표식 — 연표의 시대 머리와 같은 섹션 머리 */}
+                  <div className="flex items-end gap-2.5">
+                    <span className="ear-mark" aria-hidden="true" />
+                    <h2 className="hand text-[22px] leading-none text-ink">{g.label}</h2>
+                  </div>
                   <p className="text-xs text-ink-soft">
                     <span className="num font-bold text-ink">{g.recipes.length}</span>개
                   </p>
@@ -353,7 +356,7 @@ export default function App() {
         type="button"
         hidden={view !== 'recipes'}
         onClick={() => setSheet({ kind: 'form', id: null })}
-        className="fixed right-5 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full bg-crema px-5 py-3.5 font-bold text-on-crema shadow-float transition hover:bg-crema-deep"
+        className="fixed right-5 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 rounded-full bg-ink px-5 py-3.5 font-bold text-canvas shadow-float transition hover:opacity-90"
       >
         <Icon name="plus" size={18} />
         레시피 추가
@@ -445,8 +448,8 @@ export default function App() {
 
 function EmptyState({ filtered, onResetFilters, onAdd }: { filtered: boolean; onResetFilters: () => void; onAdd: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-12 text-center">
-      <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-faint" />
+    <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+      <Mascot pose="idle" size={180} paper="var(--color-canvas)" className="mx-auto text-ink-soft" />
       {filtered ? (
         <>
           <p className="mt-3 font-semibold text-ink-soft">조건에 맞는 레시피가 없습니다.</p>

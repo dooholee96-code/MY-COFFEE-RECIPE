@@ -47,6 +47,29 @@ export function isPouringStep(step: Pick<BrewStep, 'waterG'>): boolean {
   return step.waterG === null || step.waterG > 0;
 }
 
+/**
+ * 단계 건너뛰기 — 지금 경과 시각에서 다음/이전 단계가 시작되는 초.
+ * '이전'은 지금 단계의 시작으로 돌아가되, 단계가 시작된 지 2초가 안 됐으면 그 앞 단계로 간다
+ * (음악 앱의 "이전 곡"과 같은 규칙 — 막 넘어온 단계에서 되돌리면 한 단계 더 가고 싶은 것이므로).
+ * 시계에 매인 단계(atSec 가 숫자)만 센다. 갈 곳이 없으면 null.
+ */
+export function stepJumpTargets(
+  steps: BrewStep[],
+  elapsedSec: number,
+): { prev: number | null; next: number | null } {
+  const times = steps.map((s) => s.atSec).filter((t): t is number => t !== null);
+  const next = times.find((t) => t > elapsedSec + 0.001) ?? null;
+  const started = times.filter((t) => t <= elapsedSec + 0.001);
+  let prev: number | null = null;
+  if (started.length) {
+    const current = started[started.length - 1]!;
+    const recent = elapsedSec - current < 2;
+    if (!recent) prev = current;
+    else if (started.length >= 2) prev = started[started.length - 2]!;
+  }
+  return { prev, next };
+}
+
 export function isAutoPlayable(recipe: Pick<Recipe, 'steps'>): boolean {
   return recipe.steps.every((s) => s.atSec !== null);
 }

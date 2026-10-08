@@ -13,7 +13,7 @@ export interface MascotFigureProps {
   pose: MascotPose;
   /** false 면 멈춘 그림 (동작 줄이기, 일시정지) */
   moving: boolean;
-  /** 겹치는 선을 가릴 바탕색 — 그림이 놓이는 면의 색을 넘긴다 */
+  /** 그림이 놓이는 면의 색. 색면이 있는 캐릭터(시로)는 쓰지 않지만, 선화 캐릭터가 겹치는 선을 가릴 때 쓴다 */
   paper: string;
   className?: string;
 }

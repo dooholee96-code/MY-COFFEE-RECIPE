@@ -437,6 +437,30 @@ await step('붓는 방식이 없는 레시피도 기본 푸어오버 그림이 �
   await page.keyboard.press('Escape');
 });
 
+await step('타이머에서 이전/다음 단계로 바로 옮길 수 있다', async () => {
+  await page.getByRole('button', { name: '테츠 카스야 4:6', exact: true }).first().click();
+  const d = page.locator('[role=dialog]');
+  const timer = d.locator('section[aria-label="브루잉 타이머"]');
+  // 시작 전에는 이전이 없고 다음은 있다
+  if (!(await timer.getByRole('button', { name: '이전 단계' }).isDisabled())) throw new Error('시작 전인데 이전 단계가 켜져 있다');
+  await d.getByRole('button', { name: '시작' }).click();
+  await timer.getByRole('button', { name: '다음 단계' }).click();
+  // 2차(0:45)로 건너뛰고 계속 돈다
+  await timer.locator('[role=timer]', { hasText: /^0:4[5-9]$/ }).waitFor();
+  await timer.locator('p[aria-live=polite]', { hasText: /^2차/ }).waitFor();
+  await d.getByRole('button', { name: '일시정지' }).waitFor();
+  // 막 넘어온 단계에서 이전을 누르면 그 앞 단계(1차, 0:00)로
+  await timer.getByRole('button', { name: '이전 단계' }).click();
+  await timer.locator('[role=timer]', { hasText: /^0:0[0-2]$/ }).waitFor();
+  await timer.locator('p[aria-live=polite]', { hasText: /^1차/ }).waitFor();
+  // 멈춘 채로 다음을 누르면 그 시각에 멈춰 선다 — '계속'으로 이어 갈 수 있다
+  await d.getByRole('button', { name: '일시정지' }).click();
+  await timer.getByRole('button', { name: '다음 단계' }).click();
+  await timer.locator('[role=timer]', { hasText: /^0:45$/ }).waitFor();
+  await d.getByRole('button', { name: '계속' }).waitFor();
+  await page.keyboard.press('Escape');
+});
+
 await step('콘솔 에러가 없다', async () => {
   if (errors.length) throw new Error(errors.join(' | '));
 });
